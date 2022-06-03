@@ -1,5 +1,6 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 
 import java.awt.Dimension;
 import java.awt.event.*;
@@ -7,10 +8,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.*;
 
-public class JC19011051M extends JFrame implements ActionListener{
+public class JC19011051M extends JFrame implements ActionListener, MouseListener{
 	JButton btnAdmin, btnUser;
 	JPanel mainPanel, adminPanel, userPanel;
-	
+	//회원의 추가기능을 위한 패널
+	JPanel moviePanel;	
 	
 	// DatabaseConnection
 	String driver, URL, user, password, sql;
@@ -25,12 +27,14 @@ public class JC19011051M extends JFrame implements ActionListener{
 	//관리자 페이지 adminPanel의 버튼
 	JButton btnResetDB, btnInsert, btnDelete, btnModify, btnViewAll;
 	//회원 페이지 userPanel의 버튼
-	JButton btnSearchMovie, btnReservation;
+	JButton btnSearchMovie, btnReservation, btnMovieReservation;
 	//교수 페이지 professorPanel의 버튼
 	JButton btnProfessorLectureInfo, btnStudentInfo, btnDepartmentInfo, btnProfessorTimetable, btnInsertGrade;//btnStudentInfo는 지도 학생 정보 조회하는 버튼
 
 	JScrollPane scrollPane; // txtResul를 넣어줄 JScrollPane
 	JTextArea txtResult; // 결과값들 저장할 JTextArea (Center에 들어갈 예정)
+	
+	JTable movieTable; // 유저 페이지에서 영화 목록을 보여주는 table
 	
 	//JOptionpane 초기 회원ID 입력창 
 	JOptionPane inputUserIdPane;
@@ -77,11 +81,13 @@ public class JC19011051M extends JFrame implements ActionListener{
 		
 		btnSearchMovie = new JButton("영화 조회/예매");
 		btnReservation = new JButton("나의 예매 현황");
+		btnMovieReservation = new JButton("선택한 영화 예매");
 
 		//JPanel
 		mainPanel = new JPanel();
 		adminPanel = new JPanel();
 		userPanel = new JPanel();
+		moviePanel = new JPanel();
 		add(mainPanel);
 		
 		mainPanel.setLayout(null);
@@ -102,8 +108,10 @@ public class JC19011051M extends JFrame implements ActionListener{
 		
 		//회원 페이지
 		//userPanel 레이아웃
+		userPanel.setVisible(false);
 		userPanel.add(btnSearchMovie);
 		userPanel.add(btnReservation);
+		moviePanel.add(btnMovieReservation);
 		
 		//ScrollPane, TextArea
 		txtResult = new JTextArea();
@@ -123,7 +131,6 @@ public class JC19011051M extends JFrame implements ActionListener{
 		
 		btnSearchMovie.addActionListener(this);
 		btnReservation.addActionListener(this);		
-		
 		
 	}
 	
@@ -188,6 +195,9 @@ public class JC19011051M extends JFrame implements ActionListener{
 		}
 		else if (e.getSource() == btnReservation) {
 			
+		}
+		else if (e.getSource() == btnMovieReservation) {
+			movieReservation(memberId);
 		}
 		
 	}
@@ -449,12 +459,17 @@ public class JC19011051M extends JFrame implements ActionListener{
 			sql = "SELECT * FROM Movie";
 		}
 		sql += ";";
-
+		
+		//검색 조건에 부합하는 테이블을 담은 창 띄우기
 		JFrame tableJf = new JFrame("영화 조회");
 		tableJf.setLocation(400, 300);
 		tableJf.setSize(700, 450);
 		
-		JScrollPane tableData = new JScrollPane(getTable("Movie", sql), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		//영화 리스트를 테이블로 불러오기
+		movieTable = getTable("Movie", sql);
+		movieTable.addMouseListener(this);
+		
+		JScrollPane tableData = new JScrollPane(movieTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		tableData.setPreferredSize(new Dimension(500, 200));
 
 		JPanel mini = new JPanel();
@@ -462,17 +477,47 @@ public class JC19011051M extends JFrame implements ActionListener{
 		JLabel label = new JLabel("검색한 조건에 부합하는 영화 조회");
 		mini.add(label);
 		mini.add(tableData);
+		mini.add(btnMovieReservation);
 		
 		tableJf.add(mini);
 		tableJf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		tableJf.setVisible(true);
 	}
-
+	
 	// searchMovie에서 조회한 영화에 대한 예매 기능
+	public void movieReservation(int movie_id) {
+		System.out.println("하하~~");
+	}
+	
+	public void mouseClicked(MouseEvent e) {
+		JTable table = (JTable)e.getComponent();
+		TableModel model = (TableModel)table.getModel();
+		int column = table.getSelectedColumn();
+		int row = table.getSelectedRow();
+		System.out.println("헤헤");
+		
+	}
+	
+	public void mousePressed(MouseEvent e) {
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+	}
+
 	
 	public static void main(String[] args) { 
 		JC19011051M jc19011051 = new JC19011051M();
 	}
+
 
 	
 }
