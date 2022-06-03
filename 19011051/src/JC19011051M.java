@@ -24,6 +24,8 @@ public class JC19011051M extends JFrame implements ActionListener{
 	JButton btnReturnMainFromAdmin, btnReturnMainFromProfessor, btnReturnMainFromStudent;
 	//관리자 페이지 adminPanel의 버튼
 	JButton btnResetDB, btnInsert, btnDelete, btnModify, btnViewAll;
+	//회원 페이지 userPanel의 버튼
+	JButton btnSearchMovie, btnReservation;
 	//교수 페이지 professorPanel의 버튼
 	JButton btnProfessorLectureInfo, btnStudentInfo, btnDepartmentInfo, btnProfessorTimetable, btnInsertGrade;//btnStudentInfo는 지도 학생 정보 조회하는 버튼
 
@@ -72,6 +74,9 @@ public class JC19011051M extends JFrame implements ActionListener{
 		btnDelete = new JButton("삭제");
 		btnModify = new JButton("변경");
 		btnViewAll = new JButton("전체 테이블 조회");
+		
+		btnSearchMovie = new JButton("영화 조회/예매");
+		btnReservation = new JButton("나의 예매 현황");
 
 		//JPanel
 		mainPanel = new JPanel();
@@ -95,6 +100,11 @@ public class JC19011051M extends JFrame implements ActionListener{
 		adminPanel.add(btnModify);
 		adminPanel.add(btnViewAll);
 		
+		//회원 페이지
+		//userPanel 레이아웃
+		userPanel.add(btnSearchMovie);
+		userPanel.add(btnReservation);
+		
 		//ScrollPane, TextArea
 		txtResult = new JTextArea();
 		txtResult.setEditable(false);
@@ -111,6 +121,8 @@ public class JC19011051M extends JFrame implements ActionListener{
 		btnModify.addActionListener(this);
 		btnViewAll.addActionListener(this);
 		
+		btnSearchMovie.addActionListener(this);
+		btnReservation.addActionListener(this);		
 		
 		
 	}
@@ -171,14 +183,19 @@ public class JC19011051M extends JFrame implements ActionListener{
 		else if(e.getSource() == btnResetDB) {
 			initDatabase();
 		}
+		else if (e.getSource() == btnSearchMovie) {
+			searchMovie();
+		}
+		else if (e.getSource() == btnReservation) {
+			
+		}
 		
 	}
 	
-	private void executeSQL(String[] arr, int n) {
+	private void executeSQL(String[] arr) {
 		try {
 			stmt = con.createStatement();
-			for (int i = 0; i < n; ++i) {
-				System.out.println(i);
+			for (int i = 0; i < arr.length; ++i) {
 				stmt.executeUpdate(arr[i]);
 			}
 			
@@ -307,8 +324,8 @@ public class JC19011051M extends JFrame implements ActionListener{
 				+ "ENGINE = InnoDB;";
 		
 		//설정한 string을 실행함
-		executeSQL(initSQL, initSQL.length);
-		executeSQL(createSQL, createSQL.length);
+		executeSQL(initSQL);
+		executeSQL(createSQL);
 		//executeSQL(insertSQL, insertSQL.length);
 		JOptionPane.showMessageDialog(null, "초기화 완료", "알림", JOptionPane.DEFAULT_OPTION);
 	}
@@ -321,7 +338,6 @@ public class JC19011051M extends JFrame implements ActionListener{
 			while(rs.next()) {
 			    String name = rs.getString("COLUMN_NAME");
 			    columns += name + " ";
-			    System.out.println(name);
 			}
 		
 		} catch (SQLException e1) {
@@ -410,7 +426,7 @@ public class JC19011051M extends JFrame implements ActionListener{
 	
 	// 아래는 회원 기능 구현
 	
-	// 모든 영화에 대한 조회 기능, 아무 조건도 입력되지 않는 것도 계산해야함...
+	// 모든 영화에 대한 조회 기능
 	public void searchMovie() {
 		String sql = "SELECT * FROM Movie WHERE";
 		String[] expression = {" movie_name == ", " director == ", " actor == ", " genre == "};  
@@ -423,7 +439,7 @@ public class JC19011051M extends JFrame implements ActionListener{
 			return;
 		}
 		for (int i = 0; i < 4; ++i) {
-			if (condition[i] == "없음") continue;
+			if (condition[i].equals("없음")) continue;
 			sql += expression[i] + condition[i] + " and";
 		}
 		if (sql.charAt(sql.length() - 1) == 'd') {
@@ -433,17 +449,29 @@ public class JC19011051M extends JFrame implements ActionListener{
 			sql = "SELECT * FROM Movie";
 		}
 		sql += ";";
-		JScrollPane tableData = new JScrollPane(getTable("Movie", sql), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
 		JFrame tableJf = new JFrame("영화 조회");
-		tableJf.add(tableData);
+		tableJf.setLocation(400, 300);
+		tableJf.setSize(700, 450);
+		
+		JScrollPane tableData = new JScrollPane(getTable("Movie", sql), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		tableData.setPreferredSize(new Dimension(500, 200));
+
+		JPanel mini = new JPanel();
+		mini.setLayout(new BoxLayout(mini, BoxLayout.Y_AXIS));
+		JLabel label = new JLabel("검색한 조건에 부합하는 영화 조회");
+		mini.add(label);
+		mini.add(tableData);
+		
+		tableJf.add(mini);
+		tableJf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		tableJf.setVisible(true);
 	}
 
-	//
+	// searchMovie에서 조회한 영화에 대한 예매 기능
 	
 	public static void main(String[] args) { 
-		JC19011051M ui = new JC19011051M();
+		JC19011051M jc19011051 = new JC19011051M();
 	}
 
 	
