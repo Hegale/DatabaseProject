@@ -4,8 +4,6 @@ import javax.swing.table.TableModel;
 
 import java.awt.Dimension;
 import java.awt.event.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.*;
 
 public class JC19011051M extends JFrame implements ActionListener, MouseListener{
@@ -42,7 +40,9 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	String nowDate = "2021.05.05";
 	
 	int memberId = 1; //회원 아이디 저장 변수
-
+	
+	// 테이블을 선택했을 때 해당 위치의 값을 받아오는 변수들
+	int row = -1, column = -1, movie_id = -1;
 	
 	public JC19011051M() {
 		setTitle("18011575 정상헌 / 19011051 김주연");
@@ -272,7 +272,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			
 		}
 		else if (e.getSource() == btnMovieReservation) {
-			movieReservation(memberId);
+			movieReservation();
 		}
 		
 	}
@@ -293,6 +293,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		String[] initSQL = new String[4];
 		String[] createSQL = new String[7];
 		String[] insertMovieSQL = new String[12];
+		String[] insertTheaterSQL = new String[5];
 		initSQL[0] = "DROP DATABASE IF EXISTS madang;";
 		initSQL[1] = "create database madang;";
 		initSQL[2] = "commit;";
@@ -421,12 +422,72 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		insertMovieSQL[10] = "INSERT INTO Movie VALUES(11, '연애빠진 로맨스', '95분', '15세 이상 관람가', '정가영', '전종서, 손석구, 공민정, 김슬기, 배유람', '로맨스', '일도 연애도 마음대로 되지 않는 스물아홉 ‘자영’(전종서). 전 남친과의 격한 이별 후 호기롭게 연애 은퇴를 선언했지만 참을 수 없는 외로움에 못 이겨 최후의 보루인 데이팅 어플로 상대를 검색한다.', '2021.11.24');";
 		insertMovieSQL[11] = "INSERT INTO Movie VALUES(12, '스파이더맨:노 웨이 홈', '148분', '12세 이상 관람가', '존 왓츠', '톰 홀랜드, 젠데이아 콜먼, 베네딕트 컴버배치, 제이콥 배덜런', '액션, 모험, SF', '마블 시네마틱 유니버스의 27번째 장편 영화. 또한 페이즈 4의 4번째 영화이자 마블 스튜디오 스파이더맨 시리즈의 3번째 작품이자 마블 스튜디오 스파이더맨 시리즈의 첫번째 트릴로지인 홈커밍 트릴로지의 마지막 작품이다.', '2021.12.15');";
 		
+		insertTheaterSQL[0] = "INSERT INTO Theater VALUES(1, 10, 'N');";
+		insertTheaterSQL[1] = "INSERT INTO Theater VALUES(2, 5, 'N');";
+		insertTheaterSQL[2] = "INSERT INTO Theater VALUES(3, 3, 'N');";
+		insertTheaterSQL[3] = "INSERT INTO Theater VALUES(4, 5, 'N');";
+		insertTheaterSQL[4] = "INSERT INTO Theater VALUES(5, 10, 'N');";
+		
+		
 		//설정한 string을 실행함
 		executeSQL(initSQL);
 		executeSQL(createSQL);
 		executeSQL(insertMovieSQL);
+		executeSQL(insertTheaterSQL);
+		
+		initSeats();
+		
 		//executeSQL(insertSQL, insertSQL.length);
 		JOptionPane.showMessageDialog(null, "초기화 완료", "알림", JOptionPane.DEFAULT_OPTION);
+	}
+	
+	// 각 상영관에 대해 seat_num을 기반으로 Seat에 튜플을 자동생성
+	private void initSeats() {
+		
+		String query="SELECT * FROM Theater;"; /* SQL 문 */
+		int theater_id, seat_num;
+	  	  try { /* 데이터베이스에 질의 결과를 가져오는 과정 */
+	  	  	 Statement stmt = con.createStatement();
+	  	  	 ResultSet rs = stmt.executeQuery(query);
+	  	  	 while(rs.next()) {
+	  	  		 
+	  	  	 	theater_id = rs.getInt(1);
+	  	  	 	seat_num = rs.getInt(2);
+	  	  	 	buildSeats(theater_id, seat_num);
+	  	  	 	
+	  	  	 }
+	  	  	 
+	  	  } catch(SQLException e) {
+	  	  	   e.printStackTrace();
+	  	    }
+		
+	}
+
+	//인자로 받은 영화관에 대해 seat_num 만큼의 튜플을 Seat 테이블에 Insert
+	private void buildSeats(int theater_id, int seat_num) {
+		
+		String query = "SELECT count(*) FROM Seat;";
+		String[] sql = new String[seat_num];
+		int num;
+		
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			rs.next();
+			num = rs.getInt(1);
+		} catch(SQLException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		query = "INSERT INTO Seat VALUES(";
+		num += 1;
+		
+		for (int i = num; i < num + seat_num; ++i) {
+			sql[i-num] = query + Integer.toString(i) + ", 'N', " + Integer.toString(theater_id) + ");";
+		}
+		executeSQL(sql);
+		
 	}
 	
 	// 속성명을 담은 배열 반환
@@ -549,6 +610,10 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		}
 		sql += ";";
 		
+		//movie_id를 초기화
+		movie_id = -1;
+		row = -1;
+		
 		//검색 조건에 부합하는 테이블을 담은 창 띄우기
 		JFrame tableJf = new JFrame("영화 조회");
 		tableJf.setLocation(400, 300);
@@ -574,17 +639,21 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	}
 	
 	// searchMovie에서 조회한 영화에 대한 예매 기능
-	public void movieReservation(int movie_id) {
-		System.out.println("하하~~");
+	public void movieReservation() {
+		if (row == -1) {
+			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
 	}
 	
 	public void mouseClicked(MouseEvent e) {
 		JTable table = (JTable)e.getComponent();
 		TableModel model = (TableModel)table.getModel();
-		int column = table.getSelectedColumn();
-		int row = table.getSelectedRow();
-		System.out.println("헤헤");
+		column = table.getSelectedColumn();
+		row = table.getSelectedRow();
 		
+		movie_id = Integer.parseInt((String) model.getValueAt(row, 0));
 	}
 	
 	public void mousePressed(MouseEvent e) {
