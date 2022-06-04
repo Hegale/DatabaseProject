@@ -294,6 +294,8 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		String[] createSQL = new String[7];
 		String[] insertMovieSQL = new String[12];
 		String[] insertTheaterSQL = new String[5];
+		String[] insertMemberSQL = new String[5];
+		String[] insertSchedule = new String[15];
 		initSQL[0] = "DROP DATABASE IF EXISTS madang;";
 		initSQL[1] = "create database madang;";
 		initSQL[2] = "commit;";
@@ -321,7 +323,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 				+ "  `schedule_id` INT NOT NULL,\n"
 				+ "  `date` VARCHAR(45) NULL,\n"
 				+ "  `day` VARCHAR(45) NULL,\n"
-				+ "  `round` VARCHAR(45) NULL,\n"
+				+ "  `round` INT NULL,\n"
 				+ "  `time` VARCHAR(45) NULL,\n"
 				+ "  `movie_id` INT NOT NULL,\n"
 				+ "  `theater_id` INT NOT NULL,\n"
@@ -428,12 +430,35 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		insertTheaterSQL[3] = "INSERT INTO Theater VALUES(4, 5, 'N');";
 		insertTheaterSQL[4] = "INSERT INTO Theater VALUES(5, 10, 'N');";
 		
+		insertMemberSQL[0] = "INSERT INTO Member VALUES(1, '김부각', '010-1234-5678', 'cweed@naver.com');";
+		insertMemberSQL[1] = "INSERT INTO Member VALUES(2, '오징어집', '010-2222-3333', 'nongshim@gmail.com');";
+		insertMemberSQL[2] = "INSERT INTO Member VALUES(3, '오감자', '010-3333-4555', 'potato@naver.com');";
+		insertMemberSQL[3] = "INSERT INTO Member VALUES(4, '빼빼로', '010-1111-1111', 'pocky@naver.com');";
+		insertMemberSQL[4] = "INSERT INTO Member VALUES(5, '양파링', '010-5555-6777', 'onion@naver.com');";
+		
+		insertSchedule[0] = "INSERT INTO Schedule VALUES(1, '2022.02.03', '목', 1, '18:00', 1, 3);";
+		insertSchedule[1] = "INSERT INTO Schedule VALUES(2, '2022.05.04', '수', 1, '15:00', 2, 2);";
+		insertSchedule[2] = "INSERT INTO Schedule VALUES(3, '2022.05.05', '목', 1, '13:00', 3, 1);";
+		insertSchedule[3] = "INSERT INTO Schedule VALUES(4, '2022.05.06', '금', 1, '14:00', 4, 5);";
+		insertSchedule[4] = "INSERT INTO Schedule VALUES(5, '2022.05.07', '토', 1, '16:00', 5, 2);";
+		insertSchedule[5] = "INSERT INTO Schedule VALUES(6, '2022.05.08', '일', 1, '18:00', 6, 4);";
+		insertSchedule[6] = "INSERT INTO Schedule VALUES(7, '2022.05.09', '월', 1, '12:30', 7, 1);";
+		insertSchedule[7] = "INSERT INTO Schedule VALUES(8, '2022.05.10', '화', 1, '13:50', 8, 3);";
+		insertSchedule[8] = "INSERT INTO Schedule VALUES(9, '2022.05.11', '수', 1, '20:00', 9, 1);";
+		insertSchedule[9] = "INSERT INTO Schedule VALUES(10, '2022.05.12', '목', 1, '11:30', 10, 2);";
+		insertSchedule[10] = "INSERT INTO Schedule VALUES(11, '2022.05.13', '금', 1, '13:45', 11, 5);";
+		insertSchedule[11] = "INSERT INTO Schedule VALUES(12, '2022.05.15', '일', 1, '15:00', 12, 4);";
+		insertSchedule[12] = "INSERT INTO Schedule VALUES(13, '2022.05.15', '일', 2, '15:00', 12, 3);";
+		insertSchedule[13] = "INSERT INTO Schedule VALUES(14, '2022.05.15', '일', 3, '15:00', 12, 5);";
+		insertSchedule[14] = "INSERT INTO Schedule VALUES(15, '2022.05.15', '일', 4, '15:00', 12, 1);";
 		
 		//설정한 string을 실행함
 		executeSQL(initSQL);
 		executeSQL(createSQL);
 		executeSQL(insertMovieSQL);
 		executeSQL(insertTheaterSQL);
+		executeSQL(insertMemberSQL);
+		executeSQL(insertSchedule);
 		
 		initSeats();
 		
@@ -644,7 +669,11 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
+		JFrame insertJf = new JFrame("영화 예매");
 		
+		
+
+		insertJf.setVisible(true);
 	}
 	
 	public void mouseClicked(MouseEvent e) {
