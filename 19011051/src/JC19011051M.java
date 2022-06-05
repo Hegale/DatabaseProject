@@ -5,6 +5,8 @@ import javax.swing.table.TableModel;
 import java.awt.Dimension;
 import java.awt.event.*;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class JC19011051M extends JFrame implements ActionListener, MouseListener{
@@ -604,7 +606,6 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		}
 		tableJf.add(stock);
 		tableJf.setSize(1050, 950);
-		tableJf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		tableJf.setVisible(true);
 		
 	}
@@ -657,7 +658,6 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		movieJf.setLocation(400, 300);
 		movieJf.setSize(700, 450);
 		movieJf.add(mini);
-		movieJf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		movieJf.setVisible(true);
 	}
 	
@@ -667,12 +667,23 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
+		
 		JPanel reservPanel = new JPanel();
+		JPanel confirmPanel = new JPanel();
+		JLabel confirmLabel = new JLabel();
 		String query = "", selectedTime = "";
-		//상영 일정과 schedule_id를 받아오기
+		String[] method = {"신용카드", "무통장입금", "휴대폰", "카카오페이", "네이버페이"};
+		String[] ticketCount = {"1", "2", "3", "4"};
 		ArrayList<String> schedule_time = new ArrayList<String> ();
 		ArrayList<Integer> schedule_id = new ArrayList<Integer>();
-		int theater_id, seat_num, selected_id;
+		ArrayList<Integer> theater_id = new ArrayList<Integer>();
+		int seat_num, selected_id, result;
+		String pay_method = "";
+		
+		//결제일자 확인을 위한 오늘 날짜
+		LocalDate today = LocalDate.now();
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+		String todayDate = today.format(formatter);
 		
 		//선택한 영화에 대한 상영 일정을 바탕으로 콤보박스 생성
 		query = "SELECT * FROM Schedule WHERE movie_id = ";
@@ -684,25 +695,68 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	  	  	 while(rs.next()) {
 	  	  		 schedule_id.add(rs.getInt(1));
 	  	  		 schedule_time.add(rs.getString(2) + " " + rs.getString(3) + " " + rs.getString(5));	  	 
+	  	  		 theater_id.add(rs.getInt(7));
 	  	  	 } 
 	  	  } catch(SQLException e) {
 	  	  	   e.printStackTrace();
 	  	  	   return;
 	  	    }
 				
-		// 사용자가 선택
+		// 관람 시각(=상영관) 과 결제수단 선택
 		JComboBox scheduleCombo = new JComboBox(schedule_time.toArray(new String[schedule_time.size()]));
+		JComboBox methodCombo = new JComboBox(method);
+		JComboBox ticketCombo = new JComboBox(ticketCount);
 				
 		reservPanel.add(new JLabel("관람 시각을 선택하세요: "));
 		reservPanel.add(scheduleCombo);
 		reservPanel.add(Box.createHorizontalStrut(10));
-		int result = JOptionPane.showConfirmDialog(null, reservPanel, "선택하신 영화의 상영관과 좌석을 선택해 주세요.", JOptionPane.OK_CANCEL_OPTION);
+		reservPanel.add(new JLabel("결제 수단을 선택해 주세요: "));
+		reservPanel.add(methodCombo);
+		reservPanel.add(new JLabel("예매하실 티켓의 수를 선택해 주세요: "));
+		reservPanel.add(ticketCombo);
+		result = JOptionPane.showConfirmDialog(null, reservPanel, "날짜 및 결제방법을 선택해 주세요.", JOptionPane.OK_CANCEL_OPTION);
 		
 		// 사용자가 선택한 날짜를 기반으로 schedule_id 받아옴
 		selectedTime = scheduleCombo.getSelectedItem().toString();
-		System.out.println(selectedTime);
-		selected_id = schedule_id.get(schedule_time.indexOf(selectedTime));
+		int idx = schedule_time.indexOf(selectedTime);
+		selected_id = schedule_id.get(idx);
+		pay_method = methodCombo.getSelectedItem().toString();
+		int ticket_count = Integer.parseInt(ticketCombo.getSelectedItem().toString());
+		int pay_amount = ticket_count * 8000;
 		
+		// 상영관 등을 보여주며 최종 확인
+		confirmPanel.add(new JLabel("상영 시간 : "));
+		confirmPanel.add(new JLabel(selectedTime));
+		reservPanel.add(Box.createHorizontalStrut(10));
+		confirmPanel.add(new JLabel(", 상영관 : "));
+		confirmPanel.add(new JLabel(Integer.toString(theater_id.get(idx))));
+		
+		result = JOptionPane.showConfirmDialog(null, confirmPanel, "선택하신 일정과 상영관을 확인해 주세요. 예매하시겠습니까?", JOptionPane.OK_CANCEL_OPTION);
+		
+		if (result == JOptionPane.YES_OPTION) {
+			int reservation_id = 0, last_id = 0;
+			System.out.println("왜\n");
+			
+			//마지막 튜플의 reservation_id의 다음 숫자를 id로 지정
+			try {
+				Statement stmt = con.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT reservation_id FROM Reservation ORDER BY reservation_id;");
+				while(rs.next()) {
+					last_id = rs.getInt(1);
+				}
+				System.out.println(last_id);
+			} catch(SQLException e) {
+				System.out.println(e.getMessage());
+				return;
+			}
+			String sql[] = {"INSERT INTO Reservation VALUES("};
+			sql[0] += Integer.toString(last_id + 1) + ", '" + pay_method + "', '결제 완료', '" + Integer.toString(pay_amount) + "', '" + todayDate + "', " + memberId + ");";
+			System.out.println(sql[0]);
+			executeSQL(sql);
+		}
+		else {
+			JOptionPane.showMessageDialog(null, "예매가 취소되었습니다.", "취소", JOptionPane.ERROR_MESSAGE);
+		}
 		
 		
 	}
