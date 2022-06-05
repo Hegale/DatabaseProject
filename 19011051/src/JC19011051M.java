@@ -5,12 +5,11 @@ import javax.swing.table.TableModel;
 import java.awt.Dimension;
 import java.awt.event.*;
 import java.sql.*;
+import java.util.ArrayList;
 
 public class JC19011051M extends JFrame implements ActionListener, MouseListener{
 	JButton btnAdmin, btnUser;
 	JPanel mainPanel, adminPanel, userPanel;
-	//회원의 추가기능을 위한 패널
-	JPanel moviePanel;	
 	
 	// DatabaseConnection
 	String driver, URL, user, password, sql;
@@ -90,7 +89,6 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		mainPanel = new JPanel();
 		adminPanel = new JPanel();
 		userPanel = new JPanel();
-		moviePanel = new JPanel();
 		add(mainPanel);
 		
 		mainPanel.setLayout(null);
@@ -114,7 +112,6 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		userPanel.setVisible(false);
 		userPanel.add(btnSearchMovie);
 		userPanel.add(btnReservation);
-		moviePanel.add(btnMovieReservation);
 		
 		//ScrollPane, TextArea
 		txtResult = new JTextArea();
@@ -272,6 +269,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			
 		}
 		else if (e.getSource() == btnMovieReservation) {
+			System.out.println("외않되");
 			movieReservation();
 		}
 		
@@ -665,15 +663,41 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	// searchMovie에서 조회한 영화에 대한 예매 기능
 	public void movieReservation() {
+		System.out.println("HI~~");
 		if (row == -1) {
 			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
-		JFrame insertJf = new JFrame("영화 예매");
+		JPanel reservPanel = new JPanel();
+		String query = "";
+		//상영 일정과 schedule_id를 받아오기
+		ArrayList<String> schedule_time = new ArrayList<String> ();
+		ArrayList<Integer> schedule_id = new ArrayList<Integer>();
+		int theater_id, seat_num;
 		
+		//선택한 영화에 대한 상영 일정을 바탕으로 콤보박스 생성
+		query = "SELECT * FROM Schedule WHERE movie_id == ";
+		query += Integer.toString(movie_id) + ";";
 		
+		try { /* 데이터베이스에 질의 결과를 가져오는 과정 */
+	  	  	 Statement stmt = con.createStatement();
+	  	  	 ResultSet rs = stmt.executeQuery(query);
+	  	  	 while(rs.next()) {
+	  	  		 schedule_id.add(rs.getInt(1));
+	  	  		 schedule_time.add(rs.getString(2) + " " + rs.getString(3) + " " + rs.getString(5));	  	 
+	  	  	 } 
+	  	  } catch(SQLException e) {
+	  	  	   e.printStackTrace();
+	  	  	   return;
+	  	    }
+				
+		JComboBox scheduleCombo = new JComboBox(schedule_time.toArray(new String[schedule_time.size()]));
 
-		insertJf.setVisible(true);
+		reservPanel.add(new JLabel("관람 시각을 선택하세요: "));
+		reservPanel.add(scheduleCombo);
+		reservPanel.add(Box.createHorizontalStrut(10));
+		int result = JOptionPane.showConfirmDialog(null, reservPanel, "선택하신 영화의 상영관과 좌석을 선택해 주세요.", JOptionPane.OK_CANCEL_OPTION);
+		
 	}
 	
 	public void mouseClicked(MouseEvent e) {
