@@ -131,6 +131,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		
 		btnSearchMovie.addActionListener(this);
 		btnReservation.addActionListener(this);		
+		btnMovieReservation.addActionListener(this);
 		
 	}
 	
@@ -269,8 +270,8 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			
 		}
 		else if (e.getSource() == btnMovieReservation) {
-			System.out.println("외않되");
 			movieReservation();
+
 		}
 		
 	}
@@ -446,9 +447,9 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		insertSchedule[9] = "INSERT INTO Schedule VALUES(10, '2022.05.12', '목', 1, '11:30', 10, 2);";
 		insertSchedule[10] = "INSERT INTO Schedule VALUES(11, '2022.05.13', '금', 1, '13:45', 11, 5);";
 		insertSchedule[11] = "INSERT INTO Schedule VALUES(12, '2022.05.15', '일', 1, '15:00', 12, 4);";
-		insertSchedule[12] = "INSERT INTO Schedule VALUES(13, '2022.05.15', '일', 2, '15:00', 12, 3);";
-		insertSchedule[13] = "INSERT INTO Schedule VALUES(14, '2022.05.15', '일', 3, '15:00', 12, 5);";
-		insertSchedule[14] = "INSERT INTO Schedule VALUES(15, '2022.05.15', '일', 4, '15:00', 12, 1);";
+		insertSchedule[12] = "INSERT INTO Schedule VALUES(13, '2022.05.16', '월', 2, '15:00', 12, 3);";
+		insertSchedule[13] = "INSERT INTO Schedule VALUES(14, '2022.05.17', '화', 3, '15:00', 12, 5);";
+		insertSchedule[14] = "INSERT INTO Schedule VALUES(15, '2022.05.18', '수', 4, '15:00', 12, 1);";
 		
 		//설정한 string을 실행함
 		executeSQL(initSQL);
@@ -603,6 +604,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		}
 		tableJf.add(stock);
 		tableJf.setSize(1050, 950);
+		tableJf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		tableJf.setVisible(true);
 		
 	}
@@ -636,50 +638,47 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		//movie_id를 초기화
 		movie_id = -1;
 		row = -1;
-		
-		//검색 조건에 부합하는 테이블을 담은 창 띄우기
-		JFrame tableJf = new JFrame("영화 조회");
-		tableJf.setLocation(400, 300);
-		tableJf.setSize(700, 450);
-		
+		JFrame movieJf = new JFrame("영화 조회");
+		JPanel mini = new JPanel();
+		JLabel label = new JLabel("검색한 조건에 부합하는 영화 조회");
+				
 		//영화 리스트를 테이블로 불러오기
 		movieTable = getTable("Movie", sql);
 		movieTable.addMouseListener(this);
 		
 		JScrollPane tableData = new JScrollPane(movieTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		tableData.setPreferredSize(new Dimension(500, 200));
-
-		JPanel mini = new JPanel();
+		
 		mini.setLayout(new BoxLayout(mini, BoxLayout.Y_AXIS));
-		JLabel label = new JLabel("검색한 조건에 부합하는 영화 조회");
 		mini.add(label);
 		mini.add(tableData);
 		mini.add(btnMovieReservation);
-		
-		tableJf.add(mini);
-		tableJf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		tableJf.setVisible(true);
+
+		movieJf.setLocation(400, 300);
+		movieJf.setSize(700, 450);
+		movieJf.add(mini);
+		movieJf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		movieJf.setVisible(true);
 	}
 	
 	// searchMovie에서 조회한 영화에 대한 예매 기능
 	public void movieReservation() {
-		System.out.println("HI~~");
 		if (row == -1) {
 			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		JPanel reservPanel = new JPanel();
-		String query = "";
+		String query = "", selectedTime = "";
 		//상영 일정과 schedule_id를 받아오기
 		ArrayList<String> schedule_time = new ArrayList<String> ();
 		ArrayList<Integer> schedule_id = new ArrayList<Integer>();
-		int theater_id, seat_num;
+		int theater_id, seat_num, selected_id;
 		
 		//선택한 영화에 대한 상영 일정을 바탕으로 콤보박스 생성
-		query = "SELECT * FROM Schedule WHERE movie_id == ";
+		query = "SELECT * FROM Schedule WHERE movie_id = ";
 		query += Integer.toString(movie_id) + ";";
 		
-		try { /* 데이터베이스에 질의 결과를 가져오는 과정 */
+		try {
 	  	  	 Statement stmt = con.createStatement();
 	  	  	 ResultSet rs = stmt.executeQuery(query);
 	  	  	 while(rs.next()) {
@@ -691,12 +690,20 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	  	  	   return;
 	  	    }
 				
+		// 사용자가 선택
 		JComboBox scheduleCombo = new JComboBox(schedule_time.toArray(new String[schedule_time.size()]));
-
+				
 		reservPanel.add(new JLabel("관람 시각을 선택하세요: "));
 		reservPanel.add(scheduleCombo);
 		reservPanel.add(Box.createHorizontalStrut(10));
 		int result = JOptionPane.showConfirmDialog(null, reservPanel, "선택하신 영화의 상영관과 좌석을 선택해 주세요.", JOptionPane.OK_CANCEL_OPTION);
+		
+		// 사용자가 선택한 날짜를 기반으로 schedule_id 받아옴
+		selectedTime = scheduleCombo.getSelectedItem().toString();
+		System.out.println(selectedTime);
+		selected_id = schedule_id.get(schedule_time.indexOf(selectedTime));
+		
+		
 		
 	}
 	
@@ -705,6 +712,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		TableModel model = (TableModel)table.getModel();
 		column = table.getSelectedColumn();
 		row = table.getSelectedRow();
+		System.out.println(row);
 		
 		movie_id = Integer.parseInt((String) model.getValueAt(row, 0));
 	}
