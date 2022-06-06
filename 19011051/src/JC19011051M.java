@@ -1216,7 +1216,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 				//마지막 튜플의 ticket_id의 다음 숫자를 id로 지정
 				ticket_id = getPK("ticket");
 				
-				//사용자가 선택한 상영관의 빈 좌석 중 첫 번재 좌석 갖뎌오기
+				//사용자가 선택한 상영관의 빈 좌석 중 첫 번재 좌석 가져오기
 				query = "SELECT seat_id FROM Seat WHERE seat_use = 'N' and theater_id = ";
 				query += Integer.toString(selectedTheater) + ";";
 				try {
@@ -1228,6 +1228,12 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 					System.out.println(e.getMessage());
 					return;
 				}
+				
+				//사용한 좌석번호 변경
+				System.out.println(seat_id);
+				sql[0] = "UPDATE Seat SET seat_use = 'Y' WHERE seat_id =";
+				sql[0] += Integer.toString(seat_id) + ";";
+				executeSQL(sql);
 				
 				// 예매에 따른 티켓정보 자동 생성
 				sql[0] = "INSERT INTO Ticket VALUES(";
@@ -1267,6 +1273,8 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		JFrame reservastionJf = new JFrame("예매 현황 출력");
 		JPanel mini = new JPanel();
 		JPanel bottomPanel = new JPanel();
+		
+		row = -1;
 		// 예매 현황을 테이블로 불러오기
 		reservationTable = getUserReservationTable();
 		reservationTable.addMouseListener(this);
@@ -1343,6 +1351,14 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			JOptionPane.showMessageDialog(null, "SQL 실행 오류", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 		}
 		return null;		
+	}
+	
+	public void deleteReserve() {
+		if (row == -1) {
+			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		String[] query = {"DELETE FROM Reservation WHERE "};
 	}
 	
 	
