@@ -152,6 +152,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		btnSearchMovie.addActionListener(this);
 		btnReservation.addActionListener(this);		
 		btnMovieReservation.addActionListener(this);
+		delete_reserv_btn.addActionListener(this);
 		
 	}
 	
@@ -728,7 +729,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		}
 		
 		else if (e.getSource() == delete_reserv_btn) {
-			
+			deleteReserve();
 		}
 		else if (e.getSource() == update_movie_btn) {
 			
@@ -1137,7 +1138,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		JPanel confirmPanel = new JPanel();
 		JLabel confirmLabel = new JLabel();
 		String query = "", selectedTime = "";
-		String[] method = {"신용카드", "무통장입금", "휴대폰", "카카오페이", "네이버페이"};
+		String[] method = {"신용카드", "휴대폰", "카카오페이", "네이버페이"};
 		String[] ticketCount = {"1", "2", "3", "4"};
 		ArrayList<String> schedule_time = new ArrayList<String> ();
 		ArrayList<Integer> schedule_id = new ArrayList<Integer>();
@@ -1303,16 +1304,16 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	private JTable getUserReservationTable() {
 		
-		String query = "select Re.reservation_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
+		String query = "select Ti.ticket_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
 				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id;";
 		String countQuery = "SELECT COUNT(*) from "
-				+ "(select Re.reservation_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price "
+				+ "(select Ti.ticket_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price "
 				+ "from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
 				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id) as WT;";
 		int i = 0;
 		
 		//속성명 받아오기
-		String columnName[] = {"예매번호", "영화명", "상영일", "상영관번호", "좌석번호", "판매가격"};
+		String columnName[] = {"티켓번호", "영화명", "상영일", "상영관번호", "좌석번호", "판매가격"};
 		
 		//위에서 결정한 속성 개수(attribute)와 header에 따라 테이블을 출력함
 		try {
@@ -1360,26 +1361,35 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
-		String[] query = {"DELETE FROM Reservation WHERE "};
-		String condition = "reservation_id = ";
+		String[] query = {"DELETE FROM Ticket WHERE ticket_id = "};
 
 		int result = JOptionPane.showConfirmDialog(null, "정말 해당 티켓을 삭제하시겠습니까?", "선택하신 일정과 상영관을 확인해 주세요. 예매하시겠습니까?", JOptionPane.OK_CANCEL_OPTION);
 		
 		if (result == JOptionPane.YES_OPTION) {
 			// 다중 선택
 			if (rows.length > 1) {
-				
+				String[] sql = new String[selected_IDs.size()];
+				for (int i = 0; i < sql.length; ++i) {
+					System.out.println(selected_IDs.get(i));
+					sql[i] = query[0] + Integer.toString(selected_IDs.get(i)) + ";";
+					System.out.println(sql[i]);
+				}
+				executeSQL(sql);
 			}
 			// 단일 선택
 			else {
 				query[0] += Integer.toString(movie_id) + ";";
+				executeSQL(query);
 			}
-		}
-		else {
+			
+			// 만약 해당 예약에 대해 모든 티켓이 삭제되면, 해당 예약 번호도 삭제?
 			
 		}
+		else {
+			JOptionPane.showMessageDialog(null, "취소되었습니다.", "알림", JOptionPane.ERROR_MESSAGE);
+		}
 		
-	}	
+	}
 	
 	public void mouseClicked(MouseEvent e) {
 		JTable table = (JTable)e.getComponent();
@@ -1388,9 +1398,11 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		column = table.getSelectedColumn();
 		row = table.getSelectedRow();
 		rows = table.getSelectedRows();
+		
 		System.out.printf("행 선택 = %d\n", row);
 		for (int i = 0; i < rows.length; ++i) {
-			selected_IDs.add(Integer.parseInt((String) model.getValueAt(row, 0)));
+			selected_IDs.add(Integer.parseInt((String) model.getValueAt(rows[i], 0)));
+			System.out.printf("여러 행 선택 = %d\n", rows[i]);
 		}
 		System.out.printf("rows 길이 = %d\n", rows.length);
 		
