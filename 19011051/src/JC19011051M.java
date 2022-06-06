@@ -27,13 +27,12 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	
 	//메인으로 돌아오는 버튼
-	JButton btnReturnMainFromAdmin, btnReturnMainFromProfessor, btnReturnMainFromStudent;
+	JButton btnReturnMainFromAdmin, btnReturnMainFromUser, btnReturnMainFromProfessor, btnReturnMainFromStudent;
 	//관리자 페이지 adminPanel의 버튼
 	JButton btnResetDB, btnInsert, btnDelete, btnModify, btnViewAll;
 	//회원 페이지 userPanel의 버튼
 	JButton btnSearchMovie, btnReservation, btnMovieReservation, delete_reserv_btn, update_movie_btn, update_schedule_btn;
- 
-	
+
 
 	JScrollPane scrollPane; // txtResul를 넣어줄 JScrollPane
 	JTextArea txtResult; // 결과값들 저장할 JTextArea (Center에 들어갈 예정)
@@ -86,6 +85,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		btnUser = new JButton("회원");
 		
 		btnReturnMainFromAdmin = new JButton("메인으로");
+		btnReturnMainFromUser = new JButton("메인으로");
 		
 		btnResetDB = new JButton("DB 초기화");
 		btnInsert = new JButton("입력");
@@ -129,6 +129,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		userPanel.setVisible(false);
 		userPanel.add(btnSearchMovie);
 		userPanel.add(btnReservation);
+		userPanel.add(btnReturnMainFromUser);
 		reservationPanel.add(delete_reserv_btn); 
 		reservationPanel.add(update_movie_btn); 
 		reservationPanel.add(update_schedule_btn); 
@@ -142,6 +143,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
         btnAdmin.addActionListener(this);
         btnUser.addActionListener(this);
         btnReturnMainFromAdmin.addActionListener(this);
+        btnReturnMainFromUser.addActionListener(this);
         
         btnResetDB.addActionListener(this);
 		btnInsert.addActionListener(this);
@@ -154,6 +156,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		btnMovieReservation.addActionListener(this);
 		delete_reserv_btn.addActionListener(this);
 		update_schedule_btn.addActionListener(this);
+		update_movie_btn.addActionListener(this);
 		
 	}
 	
@@ -180,19 +183,36 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 				// id 잘못 입력시 에러 표시!
 					
 				// member 테이블에서 memberid 회원 찾는 쿼리
-				String query = "SELECT * FROM member WHERE memberid = " + User_id;
-				// 쿼리 실행~~~~
-				
-				
-				add("North", userPanel);
-				add("Center", scrollPane);
-				mainPanel.setVisible(false);
-				userPanel.setVisible(true);
+				String query = "SELECT * FROM member WHERE member_id = " + id + ";";
+				try {
+					stmt = con.createStatement();
+					rs = stmt.executeQuery(query);
+					
+					//존재하지 않는 회원 id인 경우, 접근 허용하지 않음
+					if (!rs.next()) {
+						JOptionPane.showMessageDialog(null, "존재하지 않는 회원입니다", "오류", JOptionPane.ERROR_MESSAGE);
+					}
+					else {
+						add("North", userPanel);
+						add("Center", scrollPane);
+						mainPanel.setVisible(false);
+						userPanel.setVisible(true);
+					}
+				} catch(SQLException e1) {
+					e1.printStackTrace();
+				}				
 			}
 		}
 		
 		else if(e.getSource() == btnReturnMainFromAdmin) { //메인으로 돌아가기
 			adminPanel.setVisible(false);
+			mainPanel.setVisible(true);
+			
+			txtResult.setText("");
+		}
+		
+		else if (e.getSource() == btnReturnMainFromUser) {
+			userPanel.setVisible(false);
 			mainPanel.setVisible(true);
 			
 			txtResult.setText("");
@@ -204,7 +224,11 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			
 			// 테이블 입력 잘못입력하면 에러 출력 
 			if (true) {
-				
+				ArrayList<String> tableNameArray = new ArrayList<>(Arrays.asList("Member", "Movie", "Reservation", "Schedule", "Seat", "Theater", "Ticket"));
+				if (!tableNameArray.contains(tableName)) {
+					JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n", "오류", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 			}
 			
 			
@@ -430,7 +454,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
                     String time_str = (time.getText());
                     int movie_id_int = Integer.parseInt(movie_id.getText());
                     int theater_id_int = Integer.parseInt(theater_id.getText());
-                    
+                                                        
 //                    // date가 개봉일 뒤이면 처리해줘야한다
 //                    Date movie_date = null;
 //                    Date schedule_date = null;
@@ -469,10 +493,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 //                    	JOptionPane.showMessageDialog(null, "해당 날짜에 상영 일정을 잡을 수 없습니다.\n", "다른 날을 선택하세요.", JOptionPane.ERROR_MESSAGE);
 //                    	throw new Exception();
 //                    }
-                    
-                     
-                    
-                    
+                                        
                     try {
                         stmt = con.createStatement();
 
@@ -484,6 +505,25 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
                     }catch (SQLException e1) {
                         JOptionPane.showMessageDialog(null, "SQL Exception\n"+e1.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
                     }
+                    
+                    
+                  //theater_id_int에 해당하는 theater가 사용이 'N'이면.. 'Y'로 바꿔줘야함
+                    
+                    String theaterQuery = "select * from theater where theater_use = 'N' and theater_id = " + theater_id.getText() + ";";
+                    System.out.println(theaterQuery);
+                    
+                    try{
+                    	stmt = con.createStatement();
+                    	rs = stmt.executeQuery(theaterQuery);
+                    	if (rs.next()) {
+                    		Statement stmt2 = con.createStatement();
+                    		stmt2.executeUpdate("UPDATE Theater SET theater_use = 'Y' WHERE theater_id = " + theater_id.getText() + ";");
+                    	}               
+                    } catch(SQLException e2) {
+                    	e2.printStackTrace();
+                    }
+                    
+                    
                 }	
 			}catch(NumberFormatException e3) {
                 JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n"+e3.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
@@ -677,6 +717,8 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
             }
             catch (Exception e2) {
             }
+            
+            // 삭제할 때 상영관이 완전히 비게 되면 N으로 바꿔줘야함... (모든 상영관에 대해 비었는지 점검??)
 			
 		}
 		else if(e.getSource() == btnModify) {
@@ -733,7 +775,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			deleteReserve();
 		}
 		else if (e.getSource() == update_movie_btn) {
-			
+			changeMovie();
 		}
 		else if (e.getSource() == update_schedule_btn) {
 			updateSchedule();
@@ -1210,7 +1252,6 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			
 			String sql[] = {"INSERT INTO Reservation VALUES("};
 			sql[0] += Integer.toString(reservation_id) + ", '" + pay_method + "', '결제 완료', '" + Integer.toString(pay_amount) + "', '" + todayDate + "', " + User_id + ");";
-			System.out.println(sql[0]);
 			executeSQL(sql);
 			
 			//여기부터 변경사항
@@ -1305,12 +1346,13 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	private JTable getUserReservationTable() {
 		
-		String query = "select Ti.ticket_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
-				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id;";
-		String countQuery = "SELECT COUNT(*) from "
-				+ "(select Ti.ticket_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price "
-				+ "from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
-				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id) as WT;";
+		String query = "select tk.ticket_id, movie.movie_name, schedule.date, tk.price, tk.theater_id, tk.seat_id"
+				+ " from (select * from ticket where reservation_id in (select reservation_id from reservation where member_id = ";
+		query += Integer.toString(User_id);
+		query += ")) tk, schedule, movie where tk.schedule_id = schedule.schedule_id and schedule.movie_id = movie.movie_id;";
+		String countQuery = "select count(*) from ticket where reservation_id = (select reservation_id from reservation where member_id = ";
+		countQuery += Integer.toString(User_id) + ");";
+				
 		int i = 0;
 		
 		//속성명 받아오기
@@ -1321,16 +1363,22 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			//stmt 및 data 설정
 			Statement stmt1 = con.createStatement();
 			Statement stmt2 = con.createStatement();
-			ResultSet rs = stmt2.executeQuery(query);
 			
 			//튜플의 개수 가져오기
 			ResultSet countRS = stmt1.executeQuery(countQuery);
 			countRS.next();
 			int count = countRS.getInt(1);
-			System.out.println(count);
+			
+			if (count == 0) {
+				JOptionPane.showMessageDialog(null, "나의 예매 내역이 존재하지 않습니다!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
+				return null;
+			
+			}
+			ResultSet rs = stmt2.executeQuery(query);
+
 			//데이터베이스 크기만큼의 2차원 배열 선언
 			String data[][] = new String[count][columnName.length];
-			
+
 			//2차원 배열 data에 table 순회하며 데이터 저장
 			i = 0;
 			while(rs.next()) {
@@ -1424,31 +1472,11 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		
 	}
 	
-	private void updateSchedule() {
-		if (row == -1) {
-			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-		
-		int ticketId = movie_id, movieId, seatId;
-		String query = "";
-		
-		// 사용자가 선택한 티켓을 기반으로 movie_id 가져오기
-		query = "select movie_id from schedule where schedule_id = (select schedule_id from ticket where ticket_id = ";
-		query += Integer.toString(ticketId) + ");";
-
-		try {
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(query);
-			rs.next();
-			movieId = rs.getInt(1);
-			
-		} catch(SQLException e) {
-			e.printStackTrace();
-			return;
-		}
-		
+	// movie_id와 ticket_id를 받아 해당 티켓에 새로운 상영일정 부여
+	private void newSchedule(int movieId, int ticketId) {
 		// 사용자에게 새로운 상영 일정 선택하게 하기
+		
+		String query;
 		
 		JPanel updatePanel = new JPanel();
 		JPanel confirmPanel = new JPanel();
@@ -1457,7 +1485,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		ArrayList<Integer> theater_id = new ArrayList<Integer>();
 		int selectedSchedule, result, selectedTheater;
 		String selectedTime, issue, stdPrice, price;
-		int reservationId;
+		int reservationId, seatId;
 		
 		//선택한 영화에 대한 상영 일정을 바탕으로 콤보박스 생성
 		query = "SELECT * FROM Schedule WHERE movie_id = ";
@@ -1497,7 +1525,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		confirmPanel.add(new JLabel(Integer.toString(selectedTheater)));
 		
 		result = JOptionPane.showConfirmDialog(null, confirmPanel, "선택하신 일정과 상영관을 확인해 주세요. 진행하시겠습니까?", JOptionPane.OK_CANCEL_OPTION);
-		
+			
 		if (result == JOptionPane.YES_OPTION) {
 			
 			// 삭제 전, 기존 티켓의 값들 가져오기
@@ -1558,6 +1586,77 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			JOptionPane.showMessageDialog(null, "변경이 취소되었습니다.", "취소", JOptionPane.ERROR_MESSAGE);
 		}
 	}
+
+	// 사용자 - 상영일정 변경
+	private void updateSchedule() {
+		if (row == -1) {
+			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
+		int ticketId = movie_id, movieId;
+		String query = "";
+		
+		// 사용자가 선택한 티켓을 기반으로 movie_id 가져오기
+		query = "select movie_id from schedule where schedule_id = (select schedule_id from ticket where ticket_id = ";
+		query += Integer.toString(ticketId) + ");";
+
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			rs.next();
+			movieId = rs.getInt(1);
+			
+		} catch(SQLException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+		newSchedule(movieId, ticketId);
+		
+	}
+
+	//사용자 - 영화 변경
+	private void changeMovie() {
+		if (row == -1) {
+			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
+		int ticketId = movie_id;
+		movie_id = -1;
+		row = -1;
+		
+		JFrame movieJf = new JFrame("영화 조회");
+		JPanel mini = new JPanel();
+		JLabel label = new JLabel("변경하고 싶은 영화를 선택하세요");
+		JButton btnMovieSelect = new JButton("선택 완료");
+				
+		// 전체 영화 리스트 불러온 후 창으로 띄우기
+		movieTable = getTable("Movie", "");
+		movieTable.addMouseListener(this);
+		
+		JScrollPane tableData = new JScrollPane(movieTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		tableData.setPreferredSize(new Dimension(500, 200));
+		
+		mini.setLayout(new BoxLayout(mini, BoxLayout.Y_AXIS));
+		mini.add(label);
+		mini.add(tableData);
+		mini.add(btnMovieSelect);
+
+		movieJf.setLocation(400, 300);
+		movieJf.setSize(700, 450);
+		movieJf.add(mini);
+		
+		btnMovieSelect.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				newSchedule(movie_id, ticketId);
+			}
+		});
+		
+		movieJf.setVisible(true);
+		
+	}
 	
 	
 	public void mouseClicked(MouseEvent e) {
@@ -1568,12 +1667,9 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		row = table.getSelectedRow();
 		rows = table.getSelectedRows();
 		
-		System.out.printf("행 선택 = %d\n", row);
 		for (int i = 0; i < rows.length; ++i) {
 			selected_IDs.add(Integer.parseInt((String) model.getValueAt(rows[i], 0)));
-			System.out.printf("여러 행 선택 = %d\n", rows[i]);
 		}
-		System.out.printf("rows 길이 = %d\n", rows.length);
 		
 		//각 테이블의 movie_id 혹은 reservation_id
 		movie_id = Integer.parseInt((String) model.getValueAt(row, 0));
