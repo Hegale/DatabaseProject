@@ -1,17 +1,22 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
-
+import java.text.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.Date;
 import java.awt.Dimension;
 import java.awt.event.*;
 import java.sql.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+
+
+
 
 public class JC19011051M extends JFrame implements ActionListener, MouseListener{
 	JButton btnAdmin, btnUser;
 	JPanel mainPanel, adminPanel, userPanel;
+	JPanel reservationPanel;
 	
 	// DatabaseConnection
 	String driver, URL, user, password, sql;
@@ -26,21 +31,23 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	//관리자 페이지 adminPanel의 버튼
 	JButton btnResetDB, btnInsert, btnDelete, btnModify, btnViewAll;
 	//회원 페이지 userPanel의 버튼
-	JButton btnSearchMovie, btnReservation, btnMovieReservation;
+	JButton btnSearchMovie, btnReservation, btnMovieReservation, delete_reserv_btn, update_movie_btn, update_schedule_btn;
+ 
 	
 
 	JScrollPane scrollPane; // txtResul를 넣어줄 JScrollPane
 	JTextArea txtResult; // 결과값들 저장할 JTextArea (Center에 들어갈 예정)
 	
 	JTable movieTable; // 유저 페이지에서 영화 목록을 보여주는 table
+	JTable reservationTable; // 유저 페이지에서 영화 목록을 보여주는 table
 	
 	//JOptionpane 초기 회원ID 입력창 
 	JOptionPane inputUserIdPane;
 	
 	// 예매 시점 현재 날짜를 임의로 2021년 5월 5일로 설정
 	String nowDate = "2021.05.05";
+	int User_id = -1; //회원 아이디 저장 변수
 	
-	int memberId = 1; //회원 아이디 저장 변수
 	
 	// 테이블을 선택했을 때 해당 위치의 값을 받아오는 변수들
 	int row = -1, column = -1, movie_id = -1;
@@ -87,11 +94,16 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		btnSearchMovie = new JButton("영화 조회/예매");
 		btnReservation = new JButton("나의 예매 현황");
 		btnMovieReservation = new JButton("선택한 영화 예매");
-
+		
+		delete_reserv_btn = new JButton("예매 취소");
+		update_movie_btn = new JButton("영화 변경");
+		update_schedule_btn = new JButton("일정 변경");
+		
 		//JPanel
 		mainPanel = new JPanel();
 		adminPanel = new JPanel();
 		userPanel = new JPanel();
+		reservationPanel = new JPanel();
 		add(mainPanel);
 		
 		mainPanel.setLayout(null);
@@ -115,6 +127,9 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		userPanel.setVisible(false);
 		userPanel.add(btnSearchMovie);
 		userPanel.add(btnReservation);
+		reservationPanel.add(delete_reserv_btn); 
+		reservationPanel.add(update_movie_btn); 
+		reservationPanel.add(update_schedule_btn); 
 		
 		//ScrollPane, TextArea
 		txtResult = new JTextArea();
@@ -157,11 +172,11 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			
 			if(id != null) {
 				
-				memberId = Integer.parseInt(id);
+				User_id = Integer.parseInt(id);
 				// id 잘못 입력시 에러 표시!
 					
 				// member 테이블에서 memberid 회원 찾는 쿼리
-				String query = "SELECT * FROM member WHERE memberid = " + memberId;
+				String query = "SELECT * FROM member WHERE memberid = " + User_id;
 				// 쿼리 실행~~~~
 				
 				
@@ -180,7 +195,62 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		}
 		
 		else if(e.getSource() == btnInsert) { // 관리자 패널의 insert 버튼이 눌린 경우
-			String tableName = JOptionPane.showInputDialog("입력할 테이블 이름을 입력하시오");
+			String tableName = JOptionPane.showInputDialog("입력할 테이블 이름을 입력하시오. "
+					+ "(Member, Movie, Reservation, Schedule, Seat, Theater, Ticket)");
+			
+			// 테이블 입력 잘못입력하면 에러 출력 
+			if (true) {
+				
+			}
+			
+			
+			// insert Member
+			try {
+				if(tableName.equals("Member")) {
+
+                    JTextField member_id = new JTextField(4);
+                    JTextField member_name = new JTextField(4);
+                    JTextField phone = new JTextField(4);
+                    JTextField mail = new JTextField(4);
+                    JPanel insertMemberPanel = new JPanel();
+                    
+                    insertMemberPanel.add(new JLabel("MemberID:"));
+                    insertMemberPanel.add(member_id);
+                    insertMemberPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMemberPanel.add(new JLabel("MemberName:"));
+                    insertMemberPanel.add(member_name);
+                    insertMemberPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMemberPanel.add(new JLabel("Phone:"));
+                    insertMemberPanel.add(phone);
+                    insertMemberPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMemberPanel.add(new JLabel("Mail:"));
+                    insertMemberPanel.add(mail);
+
+                    JOptionPane.showConfirmDialog(null, insertMemberPanel,"Member 테이블의 속성값들을 입력하세요.", JOptionPane.OK_CANCEL_OPTION);
+
+                    int member_id_int = Integer.parseInt(member_id.getText());
+                    String member_name_str = (member_name.getText());
+                    String phone_str = (phone.getText());
+                    String mail_str = (mail.getText());
+
+                    try {
+
+                        Statement stmt = con.createStatement();
+
+                        String insertSQL = "insert into Member (member_id, member_name, phone, mail)"
+                                + " values("+member_id_int+",'"+member_name_str+"','"+phone_str+"', '"+mail_str+"');";
+                        stmt.executeUpdate(insertSQL);
+
+                    }catch (SQLException e1) {
+                        JOptionPane.showMessageDialog(null, "SQL Exception\n"+e1.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                    }
+                }	
+			}catch(NumberFormatException e3) {
+                JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n"+e3.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+			
+			// insert Movie
 			try {
 				
 				if(tableName.equals("Movie")) {
@@ -193,38 +263,38 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
                     JTextField actor = new JTextField(4);
                     JTextField genre = new JTextField(4);
                     JTextField introduce = new JTextField(4);
-                    JTextField release = new JTextField(4);
-                    JPanel myPanel = new JPanel();
+                    JTextField release_date = new JTextField(4);
+                    JPanel insertMoviePanel = new JPanel();
                     
-                    myPanel.add(new JLabel("MovieID:"));
-                    myPanel.add(movie_id);
-                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMoviePanel.add(new JLabel("MovieID:"));
+                    insertMoviePanel.add(movie_id);
+                    insertMoviePanel.add(Box.createHorizontalStrut(10)); // a spacer
                     
-                    myPanel.add(new JLabel("MovieName:"));
-                    myPanel.add(movie_name);
-                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
-                    myPanel.add(new JLabel("ScreenTime:"));
-                    myPanel.add(screentime);
-                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
-                    myPanel.add(new JLabel("Rating:"));
-                    myPanel.add(rating);
-                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
-                    myPanel.add(new JLabel("Director:"));
-                    myPanel.add(director);
-                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
-                    myPanel.add(new JLabel("Actor:"));
-                    myPanel.add(actor);
-                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
-                    myPanel.add(new JLabel("Genre:"));
-                    myPanel.add(genre);
-                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
-                    myPanel.add(new JLabel("Introduce:"));
-                    myPanel.add(introduce);
-                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
-                    myPanel.add(new JLabel("Release:"));
-                    myPanel.add(release);
+                    insertMoviePanel.add(new JLabel("MovieName:"));
+                    insertMoviePanel.add(movie_name);
+                    insertMoviePanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMoviePanel.add(new JLabel("ScreenTime:"));
+                    insertMoviePanel.add(screentime);
+                    insertMoviePanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMoviePanel.add(new JLabel("Rating:"));
+                    insertMoviePanel.add(rating);
+                    insertMoviePanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMoviePanel.add(new JLabel("Director:"));
+                    insertMoviePanel.add(director);
+                    insertMoviePanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMoviePanel.add(new JLabel("Actor:"));
+                    insertMoviePanel.add(actor);
+                    insertMoviePanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMoviePanel.add(new JLabel("Genre:"));
+                    insertMoviePanel.add(genre);
+                    insertMoviePanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMoviePanel.add(new JLabel("Introduce:"));
+                    insertMoviePanel.add(introduce);
+                    insertMoviePanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertMoviePanel.add(new JLabel("ReleaseDate:"));
+                    insertMoviePanel.add(release_date);
 
-                    int result = JOptionPane.showConfirmDialog(null, myPanel,"Movie 테이블의 속성값들을 입력하세요.", JOptionPane.OK_CANCEL_OPTION);
+                    JOptionPane.showConfirmDialog(null, insertMoviePanel,"Movie 테이블의 속성값들을 입력하세요.", JOptionPane.OK_CANCEL_OPTION);
 
                     int movie_id_int = Integer.parseInt(movie_id.getText());
                     String movie_name_str = (movie_name.getText());
@@ -234,15 +304,15 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
                     String actor_str = (actor.getText());
                     String genre_str = (genre.getText());
                     String introduce_str = (introduce.getText());
-                    String release_str = (release.getText());
+                    String release_str = (release_date.getText());
 
                     try {
 
                         Statement stmt = con.createStatement();
 
-                        String insertSQL = "insert into Student (movie_id, movie_name, screentime, rating, director, actor, genre, introduce, release)"
-                                + "values("+movie_id_int+",'"+movie_name_str+"','"+screentime_str+"', '"+rating_str+"' , '"
-                        		+rating_str+"', '"+director_str+"', '"+actor_str+"', '"+genre_str+"', '"+introduce_str+"', '"+release_str+"')";
+                        String insertSQL = "insert into Movie (movie_id, movie_name, screentime, rating, director, actor, genre, introduce, release_date)"
+                                + " values("+movie_id_int+",'"+movie_name_str+"','"+screentime_str+"', '"+rating_str+"' , '"
+                        		+rating_str+"', '"+director_str+"', '"+actor_str+"', '"+genre_str+"', '"+introduce_str+"', '"+release_str+"');";
                         stmt.executeUpdate(insertSQL);
 
                     }catch (SQLException e1) {
@@ -253,11 +323,389 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
                 JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n"+e3.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+			
+			// insert Reservation
+			try {
+				
+				if(tableName.equals("Reservation")) {
+
+                    JTextField reservation_id = new JTextField(4);
+                    JTextField pay_method = new JTextField(4);
+                    JTextField pay_status = new JTextField(4);
+                    JTextField pay_amount = new JTextField(4);
+                    JTextField pay_date = new JTextField(4);
+                    JTextField member_id = new JTextField(4);
+                    JPanel insertReservationPanel = new JPanel();
+                    
+                    insertReservationPanel.add(new JLabel("Reservation ID : "));
+                    insertReservationPanel.add(reservation_id);
+                    insertReservationPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertReservationPanel.add(new JLabel("Pay Method : "));
+                    insertReservationPanel.add(pay_method);
+                    insertReservationPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertReservationPanel.add(new JLabel("Pay Status : "));
+                    insertReservationPanel.add(pay_status);
+                    insertReservationPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertReservationPanel.add(new JLabel("Pay Amount : "));
+                    insertReservationPanel.add(pay_amount);
+                    insertReservationPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertReservationPanel.add(new JLabel("Pay Date : "));
+                    insertReservationPanel.add(pay_date);
+                    insertReservationPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    insertReservationPanel.add(new JLabel("Member ID : "));
+                    insertReservationPanel.add(member_id);
+
+                    JOptionPane.showConfirmDialog(null, insertReservationPanel,"Reservation 테이블의 속성값들을 입력하세요.", JOptionPane.OK_CANCEL_OPTION);
+
+                    int reservation_id_int = Integer.parseInt(reservation_id.getText());
+                    String pay_method_str = (pay_method.getText());
+                    String pay_status_str = (pay_status.getText());
+                    String pay_amount_str = (pay_amount.getText());
+                    String pay_date_str = (pay_date.getText());
+                    int member_id_int = Integer.parseInt(member_id.getText());
+
+                    try {
+
+                        Statement stmt = con.createStatement();
+
+                        String insertSQL = "insert into Reservation (reservation_id, pay_method, pay_status, pay_amount, pay_date, member_id)"
+                                + " values("+reservation_id_int+",'"+pay_method_str+"','"+pay_status_str+"', '"
+                        		+pay_amount_str+"' , '"+pay_date_str+"', '"+member_id_int+"');";
+
+                        stmt.executeUpdate(insertSQL);
+
+                    }catch (SQLException e1) {
+                        JOptionPane.showMessageDialog(null, "SQL Exception\n"+e1.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                    }
+                }	
+			}catch(NumberFormatException e3) {
+                JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n"+e3.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+			
+			// insert Schedule
+			try {
+				if(tableName.equals("Schedule")) {
+
+                    JTextField schedule_id = new JTextField(4);
+                    JTextField date = new JTextField(4);
+                    JTextField day = new JTextField(4);
+                    JTextField round = new JTextField(4);
+                    JTextField time = new JTextField(4);
+                    JTextField movie_id= new JTextField(4);
+                    JTextField theater_id = new JTextField(4);
+                    JPanel insertSchedulePanel = new JPanel();
+                    
+                    insertSchedulePanel.add(new JLabel("Schedule ID : "));
+                    insertSchedulePanel.add(schedule_id);
+                    insertSchedulePanel.add(Box.createHorizontalStrut(10));
+                    insertSchedulePanel.add(new JLabel("Date : "));
+                    insertSchedulePanel.add(date);
+                    insertSchedulePanel.add(Box.createHorizontalStrut(10));
+                    insertSchedulePanel.add(new JLabel("Day : "));
+                    insertSchedulePanel.add(day);
+                    insertSchedulePanel.add(Box.createHorizontalStrut(10));
+                    insertSchedulePanel.add(new JLabel("Round : "));
+                    insertSchedulePanel.add(round);
+                    insertSchedulePanel.add(Box.createHorizontalStrut(10));
+                    insertSchedulePanel.add(new JLabel("Time : "));
+                    insertSchedulePanel.add(time);
+                    insertSchedulePanel.add(Box.createHorizontalStrut(10));
+                    insertSchedulePanel.add(new JLabel("Movie ID : "));
+                    insertSchedulePanel.add(movie_id);
+                    insertSchedulePanel.add(Box.createHorizontalStrut(10));
+                    insertSchedulePanel.add(new JLabel("theater ID : "));
+                    insertSchedulePanel.add(theater_id);
+
+                    JOptionPane.showConfirmDialog(null, insertSchedulePanel,"Schedule 테이블의 속성값들을 입력하세요.", JOptionPane.OK_CANCEL_OPTION);
+
+                    int schedule_id_int = Integer.parseInt(schedule_id.getText());
+                    String date_str = (date.getText());
+                    String day_str = (day.getText());
+                    String round_str = (round.getText());
+                    String time_str = (time.getText());
+                    int movie_id_int = Integer.parseInt(movie_id.getText());
+                    int theater_id_int = Integer.parseInt(theater_id.getText());
+                    
+//                    // date가 개봉일 뒤이면 처리해줘야한다
+//                    Date movie_date = null;
+//                    Date schedule_date = null;
+//                    
+//                    // 포맷터        
+//                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy.MM.dd");         
+//                    // 문자열 -> Date        
+//                    try {
+//						schedule_date = formatter.parse(date_str);
+//					} catch (ParseException e2) {
+//						e2.printStackTrace();
+//					}         
+//                    
+//                
+//					try {
+//						stmt = con.createStatement();
+//						
+//						String find_movie_date_SQL = "select release_date from movie where movie_id = " + movie_id_int + ";";
+//						System.out.println(find_movie_date_SQL);
+//						rs = stmt.executeQuery(find_movie_date_SQL);
+//						try {
+//							movie_date = formatter.parse(rs.getString(1));
+//							System.out.print(movie_date);
+//						} catch (ParseException e1) {
+//							// TODO Auto-generated catch block
+//							e1.printStackTrace();
+//						}
+//					} catch (SQLException e2) {
+//						// TODO Auto-generated catch block
+//						e2.printStackTrace();
+//					}
+//					
+//					// movie_date > schedule_date -> campare > 0
+//                    int compare = movie_date.compareTo(schedule_date);
+//                    if (compare < 0) {
+//                    	JOptionPane.showMessageDialog(null, "해당 날짜에 상영 일정을 잡을 수 없습니다.\n", "다른 날을 선택하세요.", JOptionPane.ERROR_MESSAGE);
+//                    	throw new Exception();
+//                    }
+                    
+                     
+                    
+                    
+                    try {
+                        stmt = con.createStatement();
+
+                        String insertSQL = "insert into Schedule (schedule_id, date, day, round, time, movie_id, theater_id)"
+                                + " values("+schedule_id_int+",'"+date_str+"','"+day_str+"', '"+round_str+"' , '"
+                        		+time_str+"', '"+movie_id_int+"', '"+theater_id_int+"');";
+                        stmt.executeUpdate(insertSQL);
+
+                    }catch (SQLException e1) {
+                        JOptionPane.showMessageDialog(null, "SQL Exception\n"+e1.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                    }
+                }	
+			}catch(NumberFormatException e3) {
+                JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n"+e3.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            } catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			
+			// insert Seat
+			try {
+				
+				if(tableName.equals("Seat")) {
+
+                    JTextField seat_id = new JTextField(4);
+                    JTextField seat_use = new JTextField(4);
+                    JTextField theater_id = new JTextField(4);
+                    JPanel insertSeatPanel = new JPanel();
+                    
+                    insertSeatPanel.add(new JLabel("Seat ID : "));
+                    insertSeatPanel.add(seat_id);
+                    insertSeatPanel.add(Box.createHorizontalStrut(10));
+                    insertSeatPanel.add(new JLabel("Seat Use : "));
+                    insertSeatPanel.add(seat_use);
+                    insertSeatPanel.add(Box.createHorizontalStrut(10));
+                    insertSeatPanel.add(new JLabel("Theater ID : "));
+                    insertSeatPanel.add(theater_id);
+                   
+                    JOptionPane.showConfirmDialog(null, insertSeatPanel,"Seat 테이블의 속성값들을 입력하세요.", JOptionPane.OK_CANCEL_OPTION);
+
+                    int seat_id_int = Integer.parseInt(seat_id.getText());
+                    String seat_use_str = seat_use.getText();
+                    int theater_id_int = Integer.parseInt(theater_id.getText());
+
+                    try {
+
+                        Statement stmt = con.createStatement();
+
+                        String insertSQL = "insert into Seat (seat_id, seat_use, theater_id)"
+                                + " values("+seat_id_int+",'"+seat_use_str+"','"+theater_id_int+"');";
+                        stmt.executeUpdate(insertSQL);
+
+                    }catch (SQLException e1) {
+                        JOptionPane.showMessageDialog(null, "SQL Exception\n"+e1.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                    }
+                }	
+			}catch(NumberFormatException e3) {
+                JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n"+e3.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+			
+			
+			// insert Theater
+			try {
+				
+				if(tableName.equals("Theater")) {
+
+                    JTextField theater_id = new JTextField(4);
+                    JTextField seat_num = new JTextField(4);
+                    JTextField theater_use = new JTextField(4);
+                    JPanel myPanel = new JPanel();
+                    
+                    myPanel.add(new JLabel("Theater ID : "));
+                    myPanel.add(theater_id);
+                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    myPanel.add(new JLabel("Seat Num : "));
+                    myPanel.add(seat_num);
+                    myPanel.add(Box.createHorizontalStrut(10)); // a spacer
+                    myPanel.add(new JLabel("Theater Use : "));
+                    myPanel.add(theater_use);
+                    
+                    int result = JOptionPane.showConfirmDialog(null, myPanel,"Movie 테이블의 속성값들을 입력하세요.", JOptionPane.OK_CANCEL_OPTION);
+
+                    int theater_id_int = Integer.parseInt(theater_id.getText());
+                    int seat_num_int = Integer.parseInt(seat_num.getText());
+                    String theater_use_str = theater_use.getText();
+                    
+                    try {
+                        Statement stmt = con.createStatement();
+
+                        String insertSQL = "insert into Theater (theater_id, seat_num, theater_use)"
+                                + " values("+theater_id_int+",'"+seat_num_int+"','"+theater_use_str+"');";
+                        stmt.executeUpdate(insertSQL);
+
+                    }catch (SQLException e1) {
+                        JOptionPane.showMessageDialog(null, "SQL Exception\n"+e1.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                    }
+                }	
+			}catch(NumberFormatException e3) {
+                JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n"+e3.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+			
+			
+			// insert Ticket
+			try {
+				
+				if(tableName.equals("Ticket")) {
+
+                    JTextField ticket_id = new JTextField(4);
+                    JTextField issue = new JTextField(4);
+                    JTextField std_price = new JTextField(4);
+                    JTextField price = new JTextField(4);
+                    JTextField theater_id = new JTextField(4);
+                    JTextField schedule_id = new JTextField(4);
+                    JTextField seat_id = new JTextField(4);
+                    JTextField reservation_id = new JTextField(4);
+                    JPanel myPanel = new JPanel();
+                    
+                    myPanel.add(new JLabel("Ticket ID:"));
+                    myPanel.add(ticket_id);
+                    myPanel.add(Box.createHorizontalStrut(10));
+                    myPanel.add(new JLabel("Issue : "));
+                    myPanel.add(issue);
+                    myPanel.add(Box.createHorizontalStrut(10));
+                    myPanel.add(new JLabel("STD Price : "));
+                    myPanel.add(std_price);
+                    myPanel.add(Box.createHorizontalStrut(10));
+                    myPanel.add(new JLabel("Price : "));
+                    myPanel.add(price);
+                    myPanel.add(Box.createHorizontalStrut(10));
+                    myPanel.add(new JLabel("Theater ID : "));
+                    myPanel.add(theater_id);
+                    myPanel.add(Box.createHorizontalStrut(10));
+                    myPanel.add(new JLabel("Schedule ID : "));
+                    myPanel.add(schedule_id);
+                    myPanel.add(Box.createHorizontalStrut(10));
+                    myPanel.add(new JLabel("Seat ID : "));
+                    myPanel.add(seat_id);
+                    myPanel.add(Box.createHorizontalStrut(10));
+                    myPanel.add(new JLabel("Reservation ID : "));
+                    myPanel.add(reservation_id);
+
+                    JOptionPane.showConfirmDialog(null, myPanel,"Ticket 테이블의 속성값들을 입력하세요.", JOptionPane.OK_CANCEL_OPTION);
+
+                    int ticket_id_int = Integer.parseInt(ticket_id.getText());
+                    String issue_str = (issue.getText());
+                    String std_price_str = (std_price.getText());
+                    String price_str = (price.getText());
+                    int theater_id_int = Integer.parseInt(theater_id.getText());
+                    int schedule_id_int = Integer.parseInt(schedule_id.getText());
+                    int seat_id_int = Integer.parseInt(seat_id.getText());
+                    int reservation_id_int = Integer.parseInt(reservation_id.getText());
+
+                    try {
+                        Statement stmt = con.createStatement();
+
+                        String insertSQL = "insert into Ticket (ticket_id, issue, std_price, price, theater_id, schedule_id, seat_id, reservation_id)"
+                                + " values("+ticket_id_int+",'"+issue_str+"','"+std_price_str+"', '"+price_str+"', "
+                        		+theater_id_int+", "+schedule_id_int+", "+seat_id_int+", "+reservation_id_int+");";
+                        stmt.executeUpdate(insertSQL);
+
+                    }catch (SQLException e1) {
+                        JOptionPane.showMessageDialog(null, "SQL Exception\n"+e1.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                    }
+                }	
+			}catch(NumberFormatException e3) {
+                JOptionPane.showMessageDialog(null, "잘못된 입력입니다\n"+e3.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+			
 		}
 		else if(e.getSource() == btnDelete) {
 			
+			JTextField tableName = new JTextField(8);
+            JTextField where = new JTextField(8);
+            JPanel deletePanel = new JPanel();
+
+            deletePanel.add(new JLabel("어떤 테이블을 삭제하시겠습니까?"));
+            deletePanel.add(tableName);
+            deletePanel.add(Box.createHorizontalStrut(2));
+            deletePanel.add(new JLabel("조건식을 써주세요"));
+            deletePanel.add(where);
+
+            try {
+                JOptionPane.showConfirmDialog(null, deletePanel,"입력!!!", JOptionPane.OK_CANCEL_OPTION);
+
+
+                String tableName_str = tableName.getText();
+                String where_str = where.getText();
+                Statement stmt = con.createStatement();
+                String deleteSQL = "Delete from " + tableName_str + " where " + where_str + ";";
+
+                stmt.execute("set sql_safe_updates = 0;");
+                stmt.executeUpdate(deleteSQL);
+
+            }
+            catch (SQLException e1) {
+                JOptionPane.showMessageDialog(null, "잘못된 입력입니다.\n"+e1.getMessage(), "입력 오류", JOptionPane.ERROR_MESSAGE);
+            }
+            catch (Exception e2) {
+            }
+			
 		}
 		else if(e.getSource() == btnModify) {
+			JTextField tableName = new JTextField(8);
+            JTextField set = new JTextField(8);
+            JTextField where = new JTextField(8);
+            JPanel modifyPanel = new JPanel();
+
+            modifyPanel.add(new JLabel("속성 변경할 테이블:"));
+            modifyPanel.add(tableName);
+            modifyPanel.add(Box.createHorizontalStrut(2));
+            modifyPanel.add(new JLabel("변경할내용 ex) member_name = '둘리둘리' :"));
+            modifyPanel.add(set);
+            modifyPanel.add(Box.createHorizontalStrut(2));
+            modifyPanel.add(new JLabel("조건식 ex) member_id = 1 :"));
+            modifyPanel.add(where);
+
+            JOptionPane.showConfirmDialog(null, modifyPanel,"입력하시오", JOptionPane.OK_CANCEL_OPTION);
+
+            String tableName_str = (tableName.getText());
+            String set_str = (set.getText());
+            String where_str = (where.getText());
+
+
+            try {
+                Statement stmt = con.createStatement();
+                String updateSQL = "Update " + tableName_str + " Set " + set_str + " where " + where_str + ";";
+
+                stmt.executeUpdate(updateSQL);
+
+            }catch (SQLException e1) {
+                JOptionPane.showMessageDialog(null, "입력 오류입니다.\n"+e1.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+            }
 			
 		}
 		else if(e.getSource() == btnViewAll) {
@@ -270,15 +718,26 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			searchMovie();
 		}
 		else if (e.getSource() == btnReservation) {
+			showUserReservation();
 			
 		}
 		else if (e.getSource() == btnMovieReservation) {
 			movieReservation();
-
 		}
 		
+		else if (e.getSource() == delete_reserv_btn) {
+			
+		}
+		else if (e.getSource() == update_movie_btn) {
+			
+		}
+		else if (e.getSource() == update_schedule_btn) {
+	
+		}
 	}
 	
+
+
 	private void executeSQL(String[] arr) {
 		try {
 			stmt = con.createStatement();
@@ -312,7 +771,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 				+ "  `actor` VARCHAR(45) NULL,\n"
 				+ "  `genre` VARCHAR(45) NULL,\n"
 				+ "  `introduce` VARCHAR(150) NULL,\n"
-				+ "  `release` VARCHAR(45) NULL,\n"
+				+ "  `release_date` VARCHAR(45) NULL,\n"
 				+ "  PRIMARY KEY (`movie_id`))\n"
 				+ "ENGINE = InnoDB;";
 		createSQL[1] = "CREATE TABLE IF NOT EXISTS `madang`.`Theater` (\n"
@@ -450,9 +909,9 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		insertSchedule[9] = "INSERT INTO Schedule VALUES(10, '2022.05.12', '목', 1, '11:30', 10, 2);";
 		insertSchedule[10] = "INSERT INTO Schedule VALUES(11, '2022.05.13', '금', 1, '13:45', 11, 5);";
 		insertSchedule[11] = "INSERT INTO Schedule VALUES(12, '2022.05.15', '일', 1, '15:00', 12, 4);";
-		insertSchedule[12] = "INSERT INTO Schedule VALUES(13, '2022.05.16', '월', 2, '15:00', 12, 3);";
-		insertSchedule[13] = "INSERT INTO Schedule VALUES(14, '2022.05.17', '화', 3, '15:00', 12, 5);";
-		insertSchedule[14] = "INSERT INTO Schedule VALUES(15, '2022.05.18', '수', 4, '15:00', 12, 1);";
+		insertSchedule[12] = "INSERT INTO Schedule VALUES(13, '2022.05.15', '일', 2, '15:00', 12, 3);";
+		insertSchedule[13] = "INSERT INTO Schedule VALUES(14, '2022.05.15', '일', 3, '15:00', 12, 5);";
+		insertSchedule[14] = "INSERT INTO Schedule VALUES(15, '2022.05.15', '일', 4, '15:00', 12, 1);";
 		
 		//설정한 string을 실행함
 		executeSQL(initSQL);
@@ -746,7 +1205,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			reservation_id = getPK("reservation");
 			
 			String sql[] = {"INSERT INTO Reservation VALUES("};
-			sql[0] += Integer.toString(reservation_id) + ", '" + pay_method + "', '결제 완료', '" + Integer.toString(pay_amount) + "', '" + todayDate + "', " + memberId + ");";
+			sql[0] += Integer.toString(reservation_id) + ", '" + pay_method + "', '결제 완료', '" + Integer.toString(pay_amount) + "', '" + todayDate + "', " + User_id + ");";
 			System.out.println(sql[0]);
 			executeSQL(sql);
 			
@@ -782,10 +1241,8 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		else {
 			JOptionPane.showMessageDialog(null, "예매가 취소되었습니다.", "취소", JOptionPane.ERROR_MESSAGE);
 		}
-		
-		
 	}
-	
+
 	// 사용하지 않은 primary key를 자동 반환
 	int getPK(String table) {
 		
@@ -805,6 +1262,89 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		}
 		return last_id + 1;		
 	}
+	
+	private void showUserReservation() {
+		JFrame reservastionJf = new JFrame("예매 현황 출력");
+		JPanel mini = new JPanel();
+		JPanel bottomPanel = new JPanel();
+		// 예매 현황을 테이블로 불러오기
+		reservationTable = getUserReservationTable();
+		reservationTable.addMouseListener(this);
+		
+		//getTable 메소드를 이용해 테이블을 받아오기
+		JScrollPane tableData = new JScrollPane(getUserReservationTable(), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		tableData.setPreferredSize(new Dimension(500, 200));
+		
+		mini.setLayout(new BoxLayout(mini, BoxLayout.Y_AXIS));
+		mini.add(tableData);
+		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
+		bottomPanel.add(delete_reserv_btn);
+		bottomPanel.add(update_movie_btn);
+		bottomPanel.add(update_schedule_btn);
+		mini.add(bottomPanel);
+
+		reservastionJf.setLocation(400, 300);
+		reservastionJf.setSize(700, 450);
+		reservastionJf.add(mini);
+		reservastionJf.setVisible(true);
+		
+		
+	}
+	
+	private JTable getUserReservationTable() {
+		
+		String query = "select Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
+				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id;";
+		String countQuery = "SELECT COUNT(*) from "
+				+ "(select Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price "
+				+ "from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
+				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id) as WT;";
+		int i = 0;
+		
+		//속성명 받아오기
+		String columnName[] = {"영화명", "상영일", "상영관번호", "좌석번호", "판매가격"};
+		
+		//위에서 결정한 속성 개수(attribute)와 header에 따라 테이블을 출력함
+		try {
+			//stmt 및 data 설정
+			Statement stmt1 = con.createStatement();
+			Statement stmt2 = con.createStatement();
+			ResultSet rs = stmt2.executeQuery(query);
+			
+			//튜플의 개수 가져오기
+			ResultSet countRS = stmt1.executeQuery(countQuery);
+			countRS.next();
+			int count = countRS.getInt(1);
+			System.out.println(count);
+			//데이터베이스 크기만큼의 2차원 배열 선언
+			String data[][] = new String[count][columnName.length];
+			
+			//2차원 배열 data에 table 순회하며 데이터 저장
+			i = 0;
+			while(rs.next()) {
+				for (int j = 0; j < columnName.length; ++j) {
+					if (j == 2 || j == 3) 
+						data[i][j] = Integer.toString(rs.getInt(j+1));
+					else
+						data[i][j] = rs.getString(j+1);
+				}
+				++i;
+	  	  	 }
+			
+			//앞에서 만든 2차원 배열과 headerLine을 이용해 JTable객체 생성
+			DefaultTableModel model = new DefaultTableModel(data, columnName);
+			JTable viewTable = new JTable(model);
+			viewTable.setShowGrid(true);
+			viewTable.setShowVerticalLines(true);
+			
+			return viewTable;
+			
+		} catch(SQLException e) {
+			JOptionPane.showMessageDialog(null, "SQL 실행 오류", "오류 메시지", JOptionPane.WARNING_MESSAGE);
+		}
+		return null;		
+	}
+	
 	
 	public void mouseClicked(MouseEvent e) {
 		JTable table = (JTable)e.getComponent();
@@ -832,6 +1372,8 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	}
 
 	
+	
+	
 	public static void main(String[] args) { 
 		JC19011051M jc19011051 = new JC19011051M();
 	}
@@ -839,6 +1381,5 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 
 	
 }
-	
 
 
