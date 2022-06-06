@@ -153,6 +153,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		btnReservation.addActionListener(this);		
 		btnMovieReservation.addActionListener(this);
 		delete_reserv_btn.addActionListener(this);
+		update_schedule_btn.addActionListener(this);
 		
 	}
 	
@@ -735,7 +736,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			
 		}
 		else if (e.getSource() == update_schedule_btn) {
-	
+			updateSchedule();
 		}
 	}
 	
@@ -912,9 +913,9 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		insertSchedule[9] = "INSERT INTO Schedule VALUES(10, '2022.05.12', '목', 1, '11:30', 10, 2);";
 		insertSchedule[10] = "INSERT INTO Schedule VALUES(11, '2022.05.13', '금', 1, '13:45', 11, 5);";
 		insertSchedule[11] = "INSERT INTO Schedule VALUES(12, '2022.05.15', '일', 1, '15:00', 12, 4);";
-		insertSchedule[12] = "INSERT INTO Schedule VALUES(13, '2022.05.15', '일', 2, '15:00', 12, 3);";
-		insertSchedule[13] = "INSERT INTO Schedule VALUES(14, '2022.05.15', '일', 3, '15:00', 12, 5);";
-		insertSchedule[14] = "INSERT INTO Schedule VALUES(15, '2022.05.15', '일', 4, '15:00', 12, 1);";
+		insertSchedule[12] = "INSERT INTO Schedule VALUES(13, '2022.05.16', '월', 2, '15:00', 12, 3);";
+		insertSchedule[13] = "INSERT INTO Schedule VALUES(14, '2022.05.17', '화', 3, '15:00', 12, 5);";
+		insertSchedule[14] = "INSERT INTO Schedule VALUES(15, '2022.05.18', '수', 4, '15:00', 12, 1);";
 		
 		//설정한 string을 실행함
 		executeSQL(initSQL);
@@ -1356,28 +1357,60 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		return null;		
 	}
 	
-	public void deleteReserve() {
+	private void deleteReserve() {
 		if (row == -1) {
 			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
-		String[] query = {"DELETE FROM Ticket WHERE ticket_id = "};
+		
+		// 삭제 시 티켓id를 기반으로 ticket 튜플 삭제, seat_id를 기반으로 seat를 다시 사용가능한 상태로 변경
+		String[] query = {"DELETE FROM Ticket WHERE ticket_id = ", "UPDATE Seat SET seat_use = 'N' WHERE seat_id = "};
+		String seatQuery = "SELECT seat_id FROM Ticket WHERE ticket_id = ";
+		int seat_id = -1, ticket_id = -1;
 
 		int result = JOptionPane.showConfirmDialog(null, "정말 해당 티켓을 삭제하시겠습니까?", "선택하신 일정과 상영관을 확인해 주세요. 예매하시겠습니까?", JOptionPane.OK_CANCEL_OPTION);
 		
 		if (result == JOptionPane.YES_OPTION) {
 			// 다중 선택
 			if (rows.length > 1) {
+				
 				String[] sql = new String[selected_IDs.size()];
+				String[] sql2 = new String[selected_IDs.size()];
 				for (int i = 0; i < sql.length; ++i) {
-					System.out.println(selected_IDs.get(i));
-					sql[i] = query[0] + Integer.toString(selected_IDs.get(i)) + ";";
-					System.out.println(sql[i]);
+
+					ticket_id = selected_IDs.get(i);
+					seatQuery += Integer.toString(ticket_id) + ";";
+					try {
+						stmt = con.createStatement();
+						rs = stmt.executeQuery(seatQuery);
+						rs.next();
+						seat_id = rs.getInt(1);
+					} catch(SQLException e){
+						e.printStackTrace();
+						return;
+					}
+					
+					sql[i] = query[0] + Integer.toString(ticket_id) + ";";
+					sql2[i] = query[1] + Integer.toString(seat_id) + ";";
+					System.out.println(sql2[i]);
+
 				}
 				executeSQL(sql);
+				executeSQL(sql2);
 			}
 			// 단일 선택
 			else {
+				seatQuery += Integer.toString(movie_id) + ";";
+				try {
+					stmt = con.createStatement();
+					rs = stmt.executeQuery(seatQuery);
+					rs.next();
+					seat_id = rs.getInt(1);
+				} catch(SQLException e){
+					e.printStackTrace();
+					return;
+				}
+				query[1] += Integer.toString(seat_id) + ";";
 				query[0] += Integer.toString(movie_id) + ";";
 				executeSQL(query);
 			}
@@ -1390,6 +1423,142 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		}
 		
 	}
+	
+	private void updateSchedule() {
+		if (row == -1) {
+			JOptionPane.showMessageDialog(null, "영화를 선택해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
+		int ticketId = movie_id, movieId, seatId;
+		String query = "";
+		
+		// 사용자가 선택한 티켓을 기반으로 movie_id 가져오기
+		query = "select movie_id from schedule where schedule_id = (select schedule_id from ticket where ticket_id = ";
+		query += Integer.toString(ticketId) + ");";
+
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			rs.next();
+			movieId = rs.getInt(1);
+			
+		} catch(SQLException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+		// 사용자에게 새로운 상영 일정 선택하게 하기
+		
+		JPanel updatePanel = new JPanel();
+		JPanel confirmPanel = new JPanel();
+		ArrayList<String> schedule_time = new ArrayList<String> ();
+		ArrayList<Integer> schedule_id = new ArrayList<Integer>();
+		ArrayList<Integer> theater_id = new ArrayList<Integer>();
+		int selectedSchedule, result, selectedTheater;
+		String selectedTime, issue, stdPrice, price;
+		int reservationId;
+		
+		//선택한 영화에 대한 상영 일정을 바탕으로 콤보박스 생성
+		query = "SELECT * FROM Schedule WHERE movie_id = ";
+		query += Integer.toString(movieId) + ";";
+		
+		try {
+	  	  	 Statement stmt = con.createStatement();
+	  	  	 ResultSet rs = stmt.executeQuery(query);
+	  	  	 while(rs.next()) {
+	  	  		 schedule_id.add(rs.getInt(1));
+	  	  		 schedule_time.add(rs.getString(2) + " " + rs.getString(3) + " " + rs.getString(5));	  	 
+	  	  		 theater_id.add(rs.getInt(7));
+	  	  	 } 
+	  	  } catch(SQLException e) {
+	  	  	   e.printStackTrace();
+	  	  	   return;
+	  	    }
+				
+		// 관람 시각(=상영관) 선택
+		JComboBox scheduleCombo = new JComboBox(schedule_time.toArray(new String[schedule_time.size()]));
+				
+		updatePanel.add(new JLabel("관람 시각을 선택하세요: "));
+		updatePanel.add(scheduleCombo);
+		result = JOptionPane.showConfirmDialog(null, updatePanel, "변경할 상영일을 선택해 주세요.", JOptionPane.OK_CANCEL_OPTION);
+		
+		// 사용자가 선택한 날짜를 기반으로 schedule_id 받아옴
+		selectedTime = scheduleCombo.getSelectedItem().toString();
+		int idx = schedule_time.indexOf(selectedTime);
+		selectedSchedule = schedule_id.get(idx);
+		
+		// 상영관 등을 보여주며 최종 확인
+		selectedTheater = theater_id.get(idx);
+		confirmPanel.add(new JLabel("상영 시간 : "));
+		confirmPanel.add(new JLabel(selectedTime));
+		confirmPanel.add(Box.createHorizontalStrut(10));
+		confirmPanel.add(new JLabel(", 상영관 : "));
+		confirmPanel.add(new JLabel(Integer.toString(selectedTheater)));
+		
+		result = JOptionPane.showConfirmDialog(null, confirmPanel, "선택하신 일정과 상영관을 확인해 주세요. 진행하시겠습니까?", JOptionPane.OK_CANCEL_OPTION);
+		
+		if (result == JOptionPane.YES_OPTION) {
+			
+			// 삭제 전, 기존 티켓의 값들 가져오기
+			query = "SELECT * FROM Ticket WHERE ticket_id = ";
+			query += Integer.toString(ticketId) + ";";
+			try {
+				stmt = con.createStatement();
+				rs = stmt.executeQuery(query);
+				rs.next();
+				issue = rs.getString(2);
+				stdPrice = rs.getString(3);
+				price = rs.getString(4);
+				seatId = rs.getInt(7);
+				reservationId = rs.getInt(8);
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return;
+			}
+			// 해당 티켓 삭제			
+			String sql[] = {"DELETE FROM Ticket WHERE ticket_id ="};
+			sql[0] += Integer.toString(ticketId) + ";";
+			
+			System.out.println(sql[0]);
+			executeSQL(sql);		
+			
+			// 티켓 삭제 후 사용 여부 N으로 변환
+			String[] seatQuery = {"UPDATE Seat SET seat_use = 'N' WHERE seat_id = "};
+			seatQuery[0] += Integer.toString(seatId) + ";";
+			executeSQL(seatQuery);
+			
+			
+			//사용자가 선택한 상영관의 빈 좌석 중 첫 번째 좌석 가져오기
+			query = "SELECT seat_id FROM Seat WHERE seat_use = 'N' and theater_id = ";
+			query += Integer.toString(selectedTheater) + ";";
+			try {
+				Statement stmt = con.createStatement();
+				ResultSet rs = stmt.executeQuery(query);
+				rs.next();
+				seatId = rs.getInt(1);
+			} catch(SQLException e) {
+				System.out.println(e.getMessage());
+				return;
+			}
+				
+			//사용한 좌석번호 변경
+			sql[0] = "UPDATE Seat SET seat_use = 'Y' WHERE seat_id =";
+			sql[0] += Integer.toString(seatId) + ";";
+			executeSQL(sql);
+			
+			// 예매에 따른 티켓정보 자동 생성
+			sql[0] = "INSERT INTO Ticket VALUES(";
+			sql[0] += Integer.toString(ticketId) + ", '발권하지 않음', '" + stdPrice + "', '" + price + "', " + Integer.toString(selectedTheater) 
+			+ ", " + Integer.toString(selectedSchedule) + ", " + Integer.toString(seatId) + ", " + Integer.toString(reservationId) + ");";
+			System.out.println(sql[0]);
+			executeSQL(sql);
+		}
+		else {
+			JOptionPane.showMessageDialog(null, "변경이 취소되었습니다.", "취소", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+	
 	
 	public void mouseClicked(MouseEvent e) {
 		JTable table = (JTable)e.getComponent();
