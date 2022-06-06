@@ -1301,16 +1301,16 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	private JTable getUserReservationTable() {
 		
-		String query = "select Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
+		String query = "select Re.reservation_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
 				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id;";
 		String countQuery = "SELECT COUNT(*) from "
-				+ "(select Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price "
+				+ "(select Re.reservation_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price "
 				+ "from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo" 
 				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id) as WT;";
 		int i = 0;
 		
 		//속성명 받아오기
-		String columnName[] = {"영화명", "상영일", "상영관번호", "좌석번호", "판매가격"};
+		String columnName[] = {"예매번호", "영화명", "상영일", "상영관번호", "좌석번호", "판매가격"};
 		
 		//위에서 결정한 속성 개수(attribute)와 header에 따라 테이블을 출력함
 		try {
@@ -1331,7 +1331,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			i = 0;
 			while(rs.next()) {
 				for (int j = 0; j < columnName.length; ++j) {
-					if (j == 2 || j == 3) 
+					if (j == 3 || j == 4) 
 						data[i][j] = Integer.toString(rs.getInt(j+1));
 					else
 						data[i][j] = rs.getString(j+1);
