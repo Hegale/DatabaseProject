@@ -51,6 +51,8 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	// 테이블을 선택했을 때 해당 위치의 값을 받아오는 변수들
 	int row = -1, column = -1, movie_id = -1;
+	int[] rows;
+	ArrayList<Integer> selected_IDs = new ArrayList<Integer>();
 	int ticket_price = 8000; //티켓 가격
 	
 	public JC19011051M() {
@@ -1280,7 +1282,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		reservationTable.addMouseListener(this);
 		
 		//getTable 메소드를 이용해 테이블을 받아오기
-		JScrollPane tableData = new JScrollPane(getUserReservationTable(), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JScrollPane tableData = new JScrollPane(reservationTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		tableData.setPreferredSize(new Dimension(500, 200));
 		
 		mini.setLayout(new BoxLayout(mini, BoxLayout.Y_AXIS));
@@ -1359,17 +1361,42 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			return;
 		}
 		String[] query = {"DELETE FROM Reservation WHERE "};
-	}
-	
+		String condition = "reservation_id = ";
+
+		int result = JOptionPane.showConfirmDialog(null, "정말 해당 티켓을 삭제하시겠습니까?", "선택하신 일정과 상영관을 확인해 주세요. 예매하시겠습니까?", JOptionPane.OK_CANCEL_OPTION);
+		
+		if (result == JOptionPane.YES_OPTION) {
+			// 다중 선택
+			if (rows.length > 1) {
+				
+			}
+			// 단일 선택
+			else {
+				query[0] += Integer.toString(movie_id) + ";";
+			}
+		}
+		else {
+			
+		}
+		
+	}	
 	
 	public void mouseClicked(MouseEvent e) {
 		JTable table = (JTable)e.getComponent();
 		TableModel model = (TableModel)table.getModel();
+		selected_IDs.clear();
 		column = table.getSelectedColumn();
 		row = table.getSelectedRow();
-		System.out.println(row);
+		rows = table.getSelectedRows();
+		System.out.printf("행 선택 = %d\n", row);
+		for (int i = 0; i < rows.length; ++i) {
+			selected_IDs.add(Integer.parseInt((String) model.getValueAt(row, 0)));
+		}
+		System.out.printf("rows 길이 = %d\n", rows.length);
 		
+		//각 테이블의 movie_id 혹은 reservation_id
 		movie_id = Integer.parseInt((String) model.getValueAt(row, 0));
+		
 	}
 	
 	public void mousePressed(MouseEvent e) {
