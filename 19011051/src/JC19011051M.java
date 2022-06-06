@@ -615,19 +615,21 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	// 모든 영화에 대한 조회 기능
 	public void searchMovie() {
 		String sql = "SELECT * FROM Movie WHERE";
-		String[] expression = {" movie_name == ", " director == ", " actor == ", " genre == "};  
+		String[] expression = {" movie_name LIKE ", " director LIKE ", " actor LIKE ", " genre LIKE"};  
 		String inputText = JOptionPane.showInputDialog("검색 조건을 영화명, 감독명, 배우명, 장르 순으로 입력해 주세요"
 				+ "\nex)'봉준호'의 영화 조회"
-				+ "\n없음 '봉준호' 없음 없음");
+				+ "\n없음 봉준호 없음 없음");
 		String[] condition = inputText.split(" ");
 		if (condition.length != 4) {
 			JOptionPane.showMessageDialog(null, "양식에 맞춰 입력해 주세요!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
+		// 사용자의 입력 조건에 따라 sql문 생성
 		for (int i = 0; i < 4; ++i) {
 			if (condition[i].equals("없음")) continue;
-			sql += expression[i] + condition[i] + " and";
+			sql += expression[i] + "'%" + condition[i] + "%'" + " and";
 		}
+		
 		if (sql.charAt(sql.length() - 1) == 'd') {
 			sql = sql.substring(0, sql.length() - 4);
 		}
@@ -635,6 +637,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			sql = "SELECT * FROM Movie";
 		}
 		sql += ";";
+		System.out.println(sql);
 		
 		//movie_id를 초기화
 		movie_id = -1;
@@ -735,7 +738,6 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		
 		if (result == JOptionPane.YES_OPTION) {
 			int reservation_id = 0, last_id = 0;
-			System.out.println("왜\n");
 			
 			//마지막 튜플의 reservation_id의 다음 숫자를 id로 지정
 			try {
