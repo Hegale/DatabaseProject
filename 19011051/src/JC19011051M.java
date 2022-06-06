@@ -1346,12 +1346,14 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	private JTable getUserReservationTable() {
 		
-		String query = "select tk.ticket_id, movie.movie_name, schedule.date, tk.price, tk.theater_id, tk.seat_id"
-				+ " from (select * from ticket where reservation_id in (select reservation_id from reservation where member_id = ";
-		query += Integer.toString(User_id);
-		query += ")) tk, schedule, movie where tk.schedule_id = schedule.schedule_id and schedule.movie_id = movie.movie_id;";
-		String countQuery = "select count(*) from ticket where reservation_id = (select reservation_id from reservation where member_id = ";
-		countQuery += Integer.toString(User_id) + ");";
+		String query = "select Ti.ticket_id, Mo.movie_name, Sc.date, Ti.theater_id, Ti.seat_id, Ti.price from reservation as Re, ticket as Ti, schedule as Sc, Movie as Mo"
+				+ " where Re.reservation_id = Ti.reservation_id and Ti.schedule_id = Sc.schedule_id and Sc.movie_id = Mo.movie_id";
+		query += " and Re.member_id = " + Integer.toString(User_id);
+		
+		String countQuery = "SELECT COUNT(*) from (" + query + ") as WT;";
+		query += ";";
+		System.out.println(query);
+		System.out.println(countQuery);
 				
 		int i = 0;
 		
@@ -1364,17 +1366,24 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			Statement stmt1 = con.createStatement();
 			Statement stmt2 = con.createStatement();
 			
+			System.out.println("hi");
 			//튜플의 개수 가져오기
 			ResultSet countRS = stmt1.executeQuery(countQuery);
 			countRS.next();
 			int count = countRS.getInt(1);
+
+			System.out.println("hi");
 			
 			if (count == 0) {
 				JOptionPane.showMessageDialog(null, "나의 예매 내역이 존재하지 않습니다!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
 				return null;
 			
 			}
+
+			System.out.println("hi");
 			ResultSet rs = stmt2.executeQuery(query);
+
+			System.out.println("hi");
 
 			//데이터베이스 크기만큼의 2차원 배열 선언
 			String data[][] = new String[count][columnName.length];
