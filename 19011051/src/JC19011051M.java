@@ -44,6 +44,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	// 테이블을 선택했을 때 해당 위치의 값을 받아오는 변수들
 	int row = -1, column = -1, movie_id = -1;
+	int ticket_price = 8000; //티켓 가격
 	
 	public JC19011051M() {
 		setTitle("18011575 정상헌 / 19011051 김주연");
@@ -680,7 +681,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		ArrayList<String> schedule_time = new ArrayList<String> ();
 		ArrayList<Integer> schedule_id = new ArrayList<Integer>();
 		ArrayList<Integer> theater_id = new ArrayList<Integer>();
-		int seat_num, selected_id, result;
+		int seat_num, selectedSchedule, result, selectedTheater, seat_id;
 		String pay_method = "";
 		
 		//결제일자 확인을 위한 오늘 날짜
@@ -722,45 +723,87 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		// 사용자가 선택한 날짜를 기반으로 schedule_id 받아옴
 		selectedTime = scheduleCombo.getSelectedItem().toString();
 		int idx = schedule_time.indexOf(selectedTime);
-		selected_id = schedule_id.get(idx);
+		selectedSchedule = schedule_id.get(idx);
 		pay_method = methodCombo.getSelectedItem().toString();
 		int ticket_count = Integer.parseInt(ticketCombo.getSelectedItem().toString());
-		int pay_amount = ticket_count * 8000;
+		int pay_amount = ticket_count * ticket_price;
 		
 		// 상영관 등을 보여주며 최종 확인
+		selectedTheater = theater_id.get(idx);
 		confirmPanel.add(new JLabel("상영 시간 : "));
 		confirmPanel.add(new JLabel(selectedTime));
 		reservPanel.add(Box.createHorizontalStrut(10));
 		confirmPanel.add(new JLabel(", 상영관 : "));
-		confirmPanel.add(new JLabel(Integer.toString(theater_id.get(idx))));
+		confirmPanel.add(new JLabel(Integer.toString(selectedTheater)));
 		
 		result = JOptionPane.showConfirmDialog(null, confirmPanel, "선택하신 일정과 상영관을 확인해 주세요. 예매하시겠습니까?", JOptionPane.OK_CANCEL_OPTION);
 		
 		if (result == JOptionPane.YES_OPTION) {
-			int reservation_id = 0, last_id = 0;
+			
+			int reservation_id = 0, ticket_id = 0;
 			
 			//마지막 튜플의 reservation_id의 다음 숫자를 id로 지정
-			try {
-				Statement stmt = con.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT reservation_id FROM Reservation ORDER BY reservation_id;");
-				while(rs.next()) {
-					last_id = rs.getInt(1);
-				}
-				System.out.println(last_id);
-			} catch(SQLException e) {
-				System.out.println(e.getMessage());
-				return;
-			}
+			reservation_id = getPK("reservation");
+			
 			String sql[] = {"INSERT INTO Reservation VALUES("};
-			sql[0] += Integer.toString(last_id + 1) + ", '" + pay_method + "', '결제 완료', '" + Integer.toString(pay_amount) + "', '" + todayDate + "', " + memberId + ");";
+			sql[0] += Integer.toString(reservation_id) + ", '" + pay_method + "', '결제 완료', '" + Integer.toString(pay_amount) + "', '" + todayDate + "', " + memberId + ");";
 			System.out.println(sql[0]);
 			executeSQL(sql);
+			
+			//여기부터 변경사항
+			
+			// 티켓 숫자만큼 '티켓' 생성
+			for (int i = 0; i < ticket_count; ++i) {
+				//마지막 튜플의 ticket_id의 다음 숫자를 id로 지정
+				ticket_id = getPK("ticket");
+				
+				//사용자가 선택한 상영관의 빈 좌석 중 첫 번재 좌석 갖뎌오기
+				query = "SELECT seat_id FROM Seat WHERE seat_use = 'N' and theater_id = ";
+				query += Integer.toString(selectedTheater) + ";";
+				try {
+					Statement stmt = con.createStatement();
+					ResultSet rs = stmt.executeQuery(query);
+					rs.next();
+					seat_id = rs.getInt(1);
+				} catch(SQLException e) {
+					System.out.println(e.getMessage());
+					return;
+				}
+				
+				// 예매에 따른 티켓정보 자동 생성
+				sql[0] = "INSERT INTO Ticket VALUES(";
+				sql[0] += Integer.toString(ticket_id) + ", '발권하지 않음', '" + Integer.toString(ticket_price) + "', '" + Integer.toString(ticket_price) + "', "
+						+ Integer.toString(selectedTheater) + ", " + Integer.toString(selectedSchedule) + ", " + Integer.toString(seat_id) + ", " + Integer.toString(reservation_id) + ");";
+				System.out.println(sql[0]);
+				executeSQL(sql);
+			}
+			
 		}
 		else {
 			JOptionPane.showMessageDialog(null, "예매가 취소되었습니다.", "취소", JOptionPane.ERROR_MESSAGE);
 		}
 		
 		
+	}
+	
+	// 사용하지 않은 primary key를 자동 반환
+	int getPK(String table) {
+		
+		String id = table + "_id";
+		int last_id = 0;
+		//마지막 튜플의 PK의 다음 숫자를 id로 지정
+		try {
+			Statement stmt = con.createStatement();
+			String query = "SELECT " + id + " FROM " + table + " ORDER BY " + id + ";"; 
+			ResultSet rs = stmt.executeQuery(query);
+			while(rs.next()) {
+				last_id = rs.getInt(1);
+			}
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+			return -1;
+		}
+		return last_id + 1;		
 	}
 	
 	public void mouseClicked(MouseEvent e) {
