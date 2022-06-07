@@ -55,27 +55,35 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	int ticket_price = 8000; //티켓 가격
 	
 	public JC19011051M() {
+	     String Driver="";
+	     String 
+	url="jdbc:mysql://localhost:3306/madang?&serverTimezone=Asia/Seoul"; 
+	     String userid="madang";
+	     String pwd="madang";
+	// 접속변수를 초기화한다. url은 자바 드라이버 이름, 호스트명(localhost), 포트번호를 입력한다
+	// userid는 관리자(madang), pwd는 사용자의 비밀번호(madang)를 입력한다.    
+	     try { /* 드라이버를 찾는 과정 */
+	       Class.forName("com.mysql.cj.jdbc.Driver");   
+	       System.out.println("드라이버 로드 성공");
+	     } catch(ClassNotFoundException e) {
+	         e.printStackTrace();
+	      }
+	// Class.forName()으로 드라이버를 로딩한다. 드라이버 이름을 Class.forName에 입력한다.      
+	     try { /* 데이터베이스를 연결하는 과정 */
+	       System.out.println("데이터베이스 연결 준비...");	
+	       con=DriverManager.getConnection(url, userid, pwd);
+	       System.out.println("데이터베이스 연결 성공");
+	     } catch(SQLException e) {
+	         e.printStackTrace();
+	       }
+	}
+	
+	private void setFrame() {
 		setTitle("18011575 정상헌 / 19011051 김주연");
 		initLayout();
 		setVisible(true);
 		setBounds(200, 50, 700, 500); //x좌표 ,y좌표 , 가로길이, 세로길이
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
-		driver = "com.mysql.cj.jdbc.Driver";
-        URL = "jdbc:mysql://localhost:3306/madang?&serverTimezone=Asia/Seoul";
-        user = "madang";
-        password = "madang";
-        sql = "INSERT INTO ORDERS VALUES (?,?,?,?,?)";
-        
-        try {
-            Class.forName(driver);
-            con = DriverManager.getConnection(URL, user, password);
-            System.out.print("con is excuted");
-
-        } catch (Exception e) {
-            System.out.println("Connection failed!");
-        }
-        
 	}
 	
 	public void initLayout() {
@@ -338,9 +346,9 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 
                         Statement stmt = con.createStatement();
 
-                        String insertSQL = "insert into Movie (movie_id, movie_name, screentime, rating, director, actor, genre, introduce, release_date)"
-                                + " values("+movie_id_int+",'"+movie_name_str+"','"+screentime_str+"', '"+rating_str+"' , '"
-                        		+rating_str+"', '"+director_str+"', '"+actor_str+"', '"+genre_str+"', '"+introduce_str+"', '"+release_str+"');";
+                        String insertSQL = "insert into Movie (movie_id, movie_name, screentime, rating, director, actor, genre, introduce, release_date) values("
+                        		+ movie_id_int+", '"+movie_name_str+"', '"+screentime_str+"', '"+rating_str+"', '"+director_str+"', '"
+                        		+actor_str+"', '"+genre_str+"', '"+introduce_str+"', '"+release_str+"');";
                         stmt.executeUpdate(insertSQL);
 
                     }catch (SQLException e1) {
@@ -455,45 +463,6 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
                     int movie_id_int = Integer.parseInt(movie_id.getText());
                     int theater_id_int = Integer.parseInt(theater_id.getText());
                                                         
-//                    // date가 개봉일 뒤이면 처리해줘야한다
-//                    Date movie_date = null;
-//                    Date schedule_date = null;
-//                    
-//                    // 포맷터        
-//                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy.MM.dd");         
-//                    // 문자열 -> Date        
-//                    try {
-//						schedule_date = formatter.parse(date_str);
-//					} catch (ParseException e2) {
-//						e2.printStackTrace();
-//					}         
-//                    
-//                
-//					try {
-//						stmt = con.createStatement();
-//						
-//						String find_movie_date_SQL = "select release_date from movie where movie_id = " + movie_id_int + ";";
-//						System.out.println(find_movie_date_SQL);
-//						rs = stmt.executeQuery(find_movie_date_SQL);
-//						try {
-//							movie_date = formatter.parse(rs.getString(1));
-//							System.out.print(movie_date);
-//						} catch (ParseException e1) {
-//							// TODO Auto-generated catch block
-//							e1.printStackTrace();
-//						}
-//					} catch (SQLException e2) {
-//						// TODO Auto-generated catch block
-//						e2.printStackTrace();
-//					}
-//					
-//					// movie_date > schedule_date -> campare > 0
-//                    int compare = movie_date.compareTo(schedule_date);
-//                    if (compare < 0) {
-//                    	JOptionPane.showMessageDialog(null, "해당 날짜에 상영 일정을 잡을 수 없습니다.\n", "다른 날을 선택하세요.", JOptionPane.ERROR_MESSAGE);
-//                    	throw new Exception();
-//                    }
-                                        
                     try {
                         stmt = con.createStatement();
 
@@ -746,7 +715,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
             try {
                 Statement stmt = con.createStatement();
                 String updateSQL = "Update " + tableName_str + " Set " + set_str + " where " + where_str + ";";
-
+                System.out.println(updateSQL);
                 stmt.executeUpdate(updateSQL);
 
             }catch (SQLException e1) {
@@ -800,9 +769,13 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		String[] initSQL = new String[4];
 		String[] createSQL = new String[7];
 		String[] insertMovieSQL = new String[12];
-		String[] insertTheaterSQL = new String[5];
-		String[] insertMemberSQL = new String[5];
-		String[] insertSchedule = new String[15];
+		String[] insertTheaterSQL = new String[10];
+		String[] insertMemberSQL = new String[10];
+		String[] insertScheduleSQL = new String[15];
+		String[] insertReservationSQL = new String[10];
+		String[] insertSeatSQL = new String[46];
+		String[] insertTicketSQL = new String[10];
+		
 		initSQL[0] = "DROP DATABASE IF EXISTS madang;";
 		initSQL[1] = "create database madang;";
 		initSQL[2] = "commit;";
@@ -935,92 +908,131 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		insertTheaterSQL[1] = "INSERT INTO Theater VALUES(2, 5, 'N');";
 		insertTheaterSQL[2] = "INSERT INTO Theater VALUES(3, 3, 'N');";
 		insertTheaterSQL[3] = "INSERT INTO Theater VALUES(4, 5, 'N');";
-		insertTheaterSQL[4] = "INSERT INTO Theater VALUES(5, 10, 'N');";
+		insertTheaterSQL[4] = "INSERT INTO Theater VALUES(5, 3, 'N');";
+		insertTheaterSQL[5] = "INSERT INTO Theater VALUES(6, 5, 'N');";
+		insertTheaterSQL[6] = "INSERT INTO Theater VALUES(7, 4, 'N');";
+		insertTheaterSQL[7] = "INSERT INTO Theater VALUES(8, 4, 'N');";
+		insertTheaterSQL[8] = "INSERT INTO Theater VALUES(9, 5, 'N');";
+		insertTheaterSQL[9] = "INSERT INTO Theater VALUES(10, 2, 'N');";
+		
+		insertSeatSQL[0] = "INSERT INTO Seat VALUES(1, 'N', 1);";
+		insertSeatSQL[1] = "INSERT INTO Seat VALUES(2, 'N', 1);";
+		insertSeatSQL[2] = "INSERT INTO Seat VALUES(3, 'N', 1);";
+		insertSeatSQL[3] = "INSERT INTO Seat VALUES(4, 'N', 1);";
+		insertSeatSQL[4] = "INSERT INTO Seat VALUES(5, 'N', 1);";
+		insertSeatSQL[5] = "INSERT INTO Seat VALUES(6, 'N', 1);";
+		insertSeatSQL[6] = "INSERT INTO Seat VALUES(7, 'N', 1);";
+		insertSeatSQL[7] = "INSERT INTO Seat VALUES(8, 'N', 1);";
+		insertSeatSQL[8] = "INSERT INTO Seat VALUES(9, 'N', 1);";
+		insertSeatSQL[9] = "INSERT INTO Seat VALUES(10, 'N', 1)";;
+		insertSeatSQL[10] = "INSERT INTO Seat VALUES(11, 'N', 2);";
+		insertSeatSQL[11] = "INSERT INTO Seat VALUES(12, 'N', 2);";
+		insertSeatSQL[12] = "INSERT INTO Seat VALUES(13, 'N', 2);";
+		insertSeatSQL[13] = "INSERT INTO Seat VALUES(14, 'N', 2);";
+		insertSeatSQL[14] = "INSERT INTO Seat VALUES(15, 'N', 2);";
+		insertSeatSQL[15] = "INSERT INTO Seat VALUES(16, 'N', 3);";
+		insertSeatSQL[16] = "INSERT INTO Seat VALUES(17, 'N', 3);";
+		insertSeatSQL[17] = "INSERT INTO Seat VALUES(18, 'N', 3);";
+		insertSeatSQL[18] = "INSERT INTO Seat VALUES(19, 'N', 4);";
+		insertSeatSQL[19] = "INSERT INTO Seat VALUES(20, 'N', 4);";
+		insertSeatSQL[20] = "INSERT INTO Seat VALUES(21, 'N', 4);";
+		insertSeatSQL[21] = "INSERT INTO Seat VALUES(22, 'N', 4);";
+		insertSeatSQL[22] = "INSERT INTO Seat VALUES(23, 'N', 4);";
+		insertSeatSQL[23] = "INSERT INTO Seat VALUES(24, 'N', 5);";
+		insertSeatSQL[24] = "INSERT INTO Seat VALUES(25, 'N', 5);";
+		insertSeatSQL[25] = "INSERT INTO Seat VALUES(26, 'N', 5);";
+		insertSeatSQL[26] = "INSERT INTO Seat VALUES(27, 'N', 6);";
+		insertSeatSQL[27] = "INSERT INTO Seat VALUES(28, 'N', 6);";
+		insertSeatSQL[28] = "INSERT INTO Seat VALUES(29, 'N', 6);";
+		insertSeatSQL[29] = "INSERT INTO Seat VALUES(30, 'N', 6);";
+		insertSeatSQL[30] = "INSERT INTO Seat VALUES(31, 'N', 6);";
+		insertSeatSQL[31] = "INSERT INTO Seat VALUES(32, 'N', 7);";
+		insertSeatSQL[32] = "INSERT INTO Seat VALUES(33, 'N', 7);";
+		insertSeatSQL[33] = "INSERT INTO Seat VALUES(34, 'N', 7);";
+		insertSeatSQL[34] = "INSERT INTO Seat VALUES(35, 'N', 7);";
+		insertSeatSQL[35] = "INSERT INTO Seat VALUES(36, 'N', 8);";
+		insertSeatSQL[36] = "INSERT INTO Seat VALUES(37, 'N', 8);";
+		insertSeatSQL[37] = "INSERT INTO Seat VALUES(38, 'N', 8);";
+		insertSeatSQL[38] = "INSERT INTO Seat VALUES(39, 'N', 8);";
+		insertSeatSQL[39] = "INSERT INTO Seat VALUES(40, 'N', 9);";
+		insertSeatSQL[40] = "INSERT INTO Seat VALUES(41, 'N', 9);";
+		insertSeatSQL[41] = "INSERT INTO Seat VALUES(42, 'N', 9);";
+		insertSeatSQL[42] = "INSERT INTO Seat VALUES(43, 'N', 9);";
+		insertSeatSQL[43] = "INSERT INTO Seat VALUES(44, 'N', 9);";
+		insertSeatSQL[44] = "INSERT INTO Seat VALUES(45, 'N', 10);";
+		insertSeatSQL[45] = "INSERT INTO Seat VALUES(46, 'N', 10);";
+		
+		
 		
 		insertMemberSQL[0] = "INSERT INTO Member VALUES(1, '김부각', '010-1234-5678', 'cweed@naver.com');";
 		insertMemberSQL[1] = "INSERT INTO Member VALUES(2, '오징어집', '010-2222-3333', 'nongshim@gmail.com');";
 		insertMemberSQL[2] = "INSERT INTO Member VALUES(3, '오감자', '010-3333-4555', 'potato@naver.com');";
 		insertMemberSQL[3] = "INSERT INTO Member VALUES(4, '빼빼로', '010-1111-1111', 'pocky@naver.com');";
 		insertMemberSQL[4] = "INSERT INTO Member VALUES(5, '양파링', '010-5555-6777', 'onion@naver.com');";
+		insertMemberSQL[5] = "INSERT INTO Member VALUES(6, '새우깡', '010-1111-1111', 'shrimp@gmail.com');";
+		insertMemberSQL[6] = "INSERT INTO Member VALUES(7, '고구마깡', '010-1111-1111', 'sweetpotato@gmail.com');";
+		insertMemberSQL[7] = "INSERT INTO Member VALUES(8, '스윙칩', '010-1111-1111', 'swing@naver.com');";
+		insertMemberSQL[8] = "INSERT INTO Member VALUES(9, '썬칩', '010-1111-1111', 'sun@naver.com');";
+		insertMemberSQL[9] = "INSERT INTO Member VALUES(10, '꼬북칩', '010-1111-1111', 'turtle@naver.com');";
 		
-		insertSchedule[0] = "INSERT INTO Schedule VALUES(1, '2022.02.03', '목', 1, '18:00', 1, 3);";
-		insertSchedule[1] = "INSERT INTO Schedule VALUES(2, '2022.05.04', '수', 1, '15:00', 2, 2);";
-		insertSchedule[2] = "INSERT INTO Schedule VALUES(3, '2022.05.05', '목', 1, '13:00', 3, 1);";
-		insertSchedule[3] = "INSERT INTO Schedule VALUES(4, '2022.05.06', '금', 1, '14:00', 4, 5);";
-		insertSchedule[4] = "INSERT INTO Schedule VALUES(5, '2022.05.07', '토', 1, '16:00', 5, 2);";
-		insertSchedule[5] = "INSERT INTO Schedule VALUES(6, '2022.05.08', '일', 1, '18:00', 6, 4);";
-		insertSchedule[6] = "INSERT INTO Schedule VALUES(7, '2022.05.09', '월', 1, '12:30', 7, 1);";
-		insertSchedule[7] = "INSERT INTO Schedule VALUES(8, '2022.05.10', '화', 1, '13:50', 8, 3);";
-		insertSchedule[8] = "INSERT INTO Schedule VALUES(9, '2022.05.11', '수', 1, '20:00', 9, 1);";
-		insertSchedule[9] = "INSERT INTO Schedule VALUES(10, '2022.05.12', '목', 1, '11:30', 10, 2);";
-		insertSchedule[10] = "INSERT INTO Schedule VALUES(11, '2022.05.13', '금', 1, '13:45', 11, 5);";
-		insertSchedule[11] = "INSERT INTO Schedule VALUES(12, '2022.05.15', '일', 1, '15:00', 12, 4);";
-		insertSchedule[12] = "INSERT INTO Schedule VALUES(13, '2022.05.16', '월', 2, '15:00', 12, 3);";
-		insertSchedule[13] = "INSERT INTO Schedule VALUES(14, '2022.05.17', '화', 3, '15:00', 12, 5);";
-		insertSchedule[14] = "INSERT INTO Schedule VALUES(15, '2022.05.18', '수', 4, '15:00', 12, 1);";
+		insertScheduleSQL[0] = "INSERT INTO Schedule VALUES(1, '2021.02.03', '수', 1, '18:00', 1, 3);";
+		insertScheduleSQL[1] = "INSERT INTO Schedule VALUES(2, '2021.05.04', '화', 1, '15:00', 2, 2);";
+		insertScheduleSQL[2] = "INSERT INTO Schedule VALUES(3, '2021.05.05', '수', 1, '13:00', 3, 1);";
+		insertScheduleSQL[3] = "INSERT INTO Schedule VALUES(4, '2021.05.06', '목', 1, '14:00', 4, 5);";
+		insertScheduleSQL[4] = "INSERT INTO Schedule VALUES(5, '2021.05.07', '금', 1, '16:00', 5, 2);";
+		insertScheduleSQL[5] = "INSERT INTO Schedule VALUES(6, '2021.05.08', '토', 1, '18:00', 6, 4);";
+		insertScheduleSQL[6] = "INSERT INTO Schedule VALUES(7, '2021.05.09', '일', 1, '12:30', 7, 1);";
+		insertScheduleSQL[7] = "INSERT INTO Schedule VALUES(8, '2021.05.10', '월', 1, '13:50', 8, 3);";
+		insertScheduleSQL[8] = "INSERT INTO Schedule VALUES(9, '2021.05.11', '화', 1, '20:00', 9, 1);";
+		insertScheduleSQL[9] = "INSERT INTO Schedule VALUES(10, '2021.05.12', '수', 1, '11:30', 10, 2);";
+		insertScheduleSQL[10] = "INSERT INTO Schedule VALUES(11, '2021.05.13', '목', 1, '13:45', 11, 5);";
+		insertScheduleSQL[11] = "INSERT INTO Schedule VALUES(12, '2021.05.15', '토', 1, '15:00', 12, 4);";
+		insertScheduleSQL[12] = "INSERT INTO Schedule VALUES(13, '2021.05.16', '일', 2, '15:00', 12, 3);";
+		insertScheduleSQL[13] = "INSERT INTO Schedule VALUES(14, '2021.05.17', '월', 3, '15:00', 12, 5);";
+		insertScheduleSQL[14] = "INSERT INTO Schedule VALUES(15, '2021.05.18', '화', 4, '15:00', 12, 1);";
+		
+		insertReservationSQL[0] = "insert into reservation VALUES(1, '카드', '결제완료', '8000', '2021.05.05', 1);";
+		insertReservationSQL[1] = "insert into reservation VALUES(2, '현금', '결제완료', '8000', '2021.06.06', 3);";
+		insertReservationSQL[2] = "insert into reservation VALUES(3, '카드', '결제중', '16000', '2021.07.07', 3);";
+		insertReservationSQL[3] = "insert into reservation VALUES(4, '카드', '결제오류', '24000', '2021.08.08', 5);";
+		insertReservationSQL[4] = "insert into reservation VALUES(5, '현금', '결제완료', '8000', '2021.08.08', 5);";
+		insertReservationSQL[5] = "insert into reservation VALUES(6, '카카오페이', '결제완료', '8000', '2021.08.08', 5);";
+		insertReservationSQL[6] = "insert into reservation VALUES(7, '네이버페이', '결제완료', '8000', '2021.08.08', 4);";
+		insertReservationSQL[7] = "insert into reservation VALUES(8, '카드', '결제완료', '8000', '2021.08.08', 3);";
+		insertReservationSQL[8] = "insert into reservation VALUES(9, '현금', '결제완료', '8000', '2021.11.08', 5);";
+		insertReservationSQL[9] = "insert into reservation VALUES(10, '카카오페이', '결제오류', '8000', '2021.08.08', 6);";
+		
+		insertTicketSQL[0] = "insert into ticket  values(1, '발권 완료', '8000', '8000', 3, 1, 16, 1);";
+		insertTicketSQL[1] = "insert into ticket values(2, '미발권', '8000', '8000', 2, 2, 11, 2);";
+		insertTicketSQL[2] = "insert into ticket values(3, '발권 완료', '16000', '16000', 1, 3, 3, 3);";
+		insertTicketSQL[3] = "insert into ticket values(4, '미발권', '24000', '24000', 5, 4, 24, 4);";
+		insertTicketSQL[4] = "insert into ticket values(5, '발권 완료', '8000', '8000', 2, 5, 12, 5);";
+		insertTicketSQL[5] = "insert into ticket values(6, '발권 완료', '8000', '8000',2 ,5 ,13 ,10);";
+		insertTicketSQL[6] = "insert into ticket values(7, '미발권', '8000', '8000',1 ,4 ,4 ,9);";
+		insertTicketSQL[7] = "insert into ticket values(8, '미발권', '8000', '8000',1 ,9 ,5 ,8);";
+		insertTicketSQL[8] = "insert into ticket values(9, '미발권', '8000', '8000',1 ,7 ,6 ,7);";
+		insertTicketSQL[9] = "insert into ticket values(10, '발권 완료', '8000', '8000',1 ,9 ,7 ,6);";
+		
+		
 		
 		//설정한 string을 실행함
 		executeSQL(initSQL);
 		executeSQL(createSQL);
 		executeSQL(insertMovieSQL);
 		executeSQL(insertTheaterSQL);
+		executeSQL(insertSeatSQL);
 		executeSQL(insertMemberSQL);
-		executeSQL(insertSchedule);
+		executeSQL(insertScheduleSQL);
+		executeSQL(insertReservationSQL);
+		executeSQL(insertTicketSQL);
 		
-		initSeats();
+		//initSeats();
 		
 		//executeSQL(insertSQL, insertSQL.length);
 		JOptionPane.showMessageDialog(null, "초기화 완료", "알림", JOptionPane.DEFAULT_OPTION);
 	}
 	
-	// 각 상영관에 대해 seat_num을 기반으로 Seat에 튜플을 자동생성
-	private void initSeats() {
-		
-		String query="SELECT * FROM Theater;"; /* SQL 문 */
-		int theater_id, seat_num;
-	  	  try { /* 데이터베이스에 질의 결과를 가져오는 과정 */
-	  	  	 Statement stmt = con.createStatement();
-	  	  	 ResultSet rs = stmt.executeQuery(query);
-	  	  	 while(rs.next()) {
-	  	  		 
-	  	  	 	theater_id = rs.getInt(1);
-	  	  	 	seat_num = rs.getInt(2);
-	  	  	 	buildSeats(theater_id, seat_num);
-	  	  	 	
-	  	  	 }
-	  	  	 
-	  	  } catch(SQLException e) {
-	  	  	   e.printStackTrace();
-	  	    }
-		
-	}
-
-	//인자로 받은 영화관에 대해 seat_num 만큼의 튜플을 Seat 테이블에 Insert
-	private void buildSeats(int theater_id, int seat_num) {
-		
-		String query = "SELECT count(*) FROM Seat;";
-		String[] sql = new String[seat_num];
-		int num;
-		
-		try {
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(query);
-			rs.next();
-			num = rs.getInt(1);
-		} catch(SQLException e) {
-			e.printStackTrace();
-			return;
-		}
-
-		query = "INSERT INTO Seat VALUES(";
-		num += 1;
-		
-		for (int i = num; i < num + seat_num; ++i) {
-			sql[i-num] = query + Integer.toString(i) + ", 'N', " + Integer.toString(theater_id) + ");";
-		}
-		executeSQL(sql);
-		
-	}
+	
 	
 	// 속성명을 담은 배열 반환
 	private String[] getAttribute(String table) {
@@ -1366,13 +1378,11 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			Statement stmt1 = con.createStatement();
 			Statement stmt2 = con.createStatement();
 			
-			System.out.println("hi");
 			//튜플의 개수 가져오기
 			ResultSet countRS = stmt1.executeQuery(countQuery);
 			countRS.next();
 			int count = countRS.getInt(1);
 
-			System.out.println("hi");
 			
 			if (count == 0) {
 				JOptionPane.showMessageDialog(null, "나의 예매 내역이 존재하지 않습니다!", "오류 메시지", JOptionPane.WARNING_MESSAGE);
@@ -1380,10 +1390,8 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			
 			}
 
-			System.out.println("hi");
 			ResultSet rs = stmt2.executeQuery(query);
 
-			System.out.println("hi");
 
 			//데이터베이스 크기만큼의 2차원 배열 선언
 			String data[][] = new String[count][columnName.length];
@@ -1422,7 +1430,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 		
 		// 삭제 시 티켓id를 기반으로 ticket 튜플 삭제, seat_id를 기반으로 seat를 다시 사용가능한 상태로 변경
 		String[] query = {"DELETE FROM Ticket WHERE ticket_id = ", "UPDATE Seat SET seat_use = 'N' WHERE seat_id = "};
-		String seatQuery = "SELECT seat_id FROM Ticket WHERE ticket_id = ";
+		String seatQuery;
 		int seat_id = -1, ticket_id = -1;
 
 		int result = JOptionPane.showConfirmDialog(null, "정말 해당 티켓을 삭제하시겠습니까?", "선택하신 일정과 상영관을 확인해 주세요. 예매하시겠습니까?", JOptionPane.OK_CANCEL_OPTION);
@@ -1436,6 +1444,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 				for (int i = 0; i < sql.length; ++i) {
 
 					ticket_id = selected_IDs.get(i);
+					seatQuery = "SELECT seat_id FROM Ticket WHERE ticket_id = ";
 					seatQuery += Integer.toString(ticket_id) + ";";
 					try {
 						stmt = con.createStatement();
@@ -1449,7 +1458,6 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 					
 					sql[i] = query[0] + Integer.toString(ticket_id) + ";";
 					sql2[i] = query[1] + Integer.toString(seat_id) + ";";
-					System.out.println(sql2[i]);
 
 				}
 				executeSQL(sql);
@@ -1457,6 +1465,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 			}
 			// 단일 선택
 			else {
+				seatQuery = "SELECT seat_id FROM Ticket WHERE ticket_id = ";
 				seatQuery += Integer.toString(movie_id) + ";";
 				try {
 					stmt = con.createStatement();
@@ -1705,6 +1714,7 @@ public class JC19011051M extends JFrame implements ActionListener, MouseListener
 	
 	public static void main(String[] args) { 
 		JC19011051M jc19011051 = new JC19011051M();
+		jc19011051.setFrame();
 	}
 
 
